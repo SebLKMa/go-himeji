@@ -6,7 +6,7 @@ import (
 	"github.com/seblkma/go-himeji/token"
 )
 
-func TestNextToken(t *testing.T) {
+func TestNextTokenV0(t *testing.T) {
 	input := `=+(){},;`
 
 	validTokenTypes := []struct {
