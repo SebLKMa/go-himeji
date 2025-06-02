@@ -1,6 +1,7 @@
 package lexer
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/seblkma/go-himeji/token"
@@ -38,4 +39,18 @@ func TestNextTokenV0(t *testing.T) {
 		}
 	}
 
+}
+
+func TestNextTokenV1(t *testing.T) {
+	input := `let five = 5;
+	let ten = 10;
+
+	let add = fn(x, y) {
+		x + y;
+	};
+
+	let result = add(five, ten);
+	`
+	fmt.Println("input:")
+	fmt.Println(input)
 }
