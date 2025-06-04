@@ -10,7 +10,7 @@ import (
 func TestNextTokenV0(t *testing.T) {
 	input := `=+(){},;`
 
-	validTokenTypes := []struct {
+	inputTokens := []struct {
 		expectedType    token.TokenType
 		expectedLiteral string
 	}{
@@ -27,15 +27,15 @@ func TestNextTokenV0(t *testing.T) {
 
 	l := New(input)
 
-	for i, tt := range validTokenTypes {
+	for i, tt := range inputTokens {
 		tok := l.NextToken()
 
 		if tok.Type != tt.expectedType {
-			t.Fatalf("tests[%d] - tokentype wrong. expected=%q, got=%q", i, tt.expectedType, tok.Type)
+			t.Fatalf("inputTokens[%d] - tokentype wrong. expected=%q, got=%q", i, tt.expectedType, tok.Type)
 		}
 
 		if tok.Literal != tt.expectedLiteral {
-			t.Fatalf("tests[%d] - literal wrong. expected=%q, got=%q", i, tt.expectedLiteral, tok.Literal)
+			t.Fatalf("inputTokens[%d] - literal wrong. expected=%q, got=%q", i, tt.expectedLiteral, tok.Literal)
 		}
 	}
 
@@ -55,7 +55,7 @@ func TestNextTokenV1(t *testing.T) {
 	fmt.Println("input:")
 	fmt.Println(input)
 
-	validTokenTypes := []struct {
+	inputTokens := []struct {
 		expectedType    token.TokenType
 		expectedLiteral string
 	}{
@@ -102,15 +102,15 @@ func TestNextTokenV1(t *testing.T) {
 
 	l := New(input)
 
-	for i, tt := range validTokenTypes {
+	for i, tt := range inputTokens {
 		tok := l.NextToken()
 
 		if tok.Type != tt.expectedType {
-			t.Fatalf("tests[%d] - tokentype wrong. expected=%q, got=%q", i, tt.expectedType, tok.Type)
+			t.Fatalf("inputTokens[%d] - tokentype wrong. expected=%q, got=%q", i, tt.expectedType, tok.Type)
 		}
 
 		if tok.Literal != tt.expectedLiteral {
-			t.Fatalf("tests[%d] - literal wrong. expected=%q, got=%q", i, tt.expectedLiteral, tok.Literal)
+			t.Fatalf("inputTokens[%d] - literal wrong. expected=%q, got=%q", i, tt.expectedLiteral, tok.Literal)
 		}
 	}
 }
@@ -127,12 +127,11 @@ func TestNextTokenV2(t *testing.T) {
 	let result = add(five, ten);
 	!-/*5;
 	5 < 10 > 5;
-
 	`
 	fmt.Println("input:")
 	fmt.Println(input)
 
-	inputTokenTypes := []struct {
+	inputTokens := []struct {
 		expectedType    token.TokenType
 		expectedLiteral string
 	}{
@@ -199,15 +198,15 @@ func TestNextTokenV2(t *testing.T) {
 
 	l := New(input)
 
-	for i, tt := range inputTokenTypes {
+	for i, tt := range inputTokens {
 		tok := l.NextToken()
 
 		if tok.Type != tt.expectedType {
-			t.Fatalf("inputTokenTypes[%d] - tokentype wrong. expected=%q, got=%q", i, tt.expectedType, tok.Type)
+			t.Fatalf("inputTokens[%d] - tokentype wrong. expected=%q, got=%q", i, tt.expectedType, tok.Type)
 		}
 
 		if tok.Literal != tt.expectedLiteral {
-			t.Fatalf("inputTokenTypes[%d] - literal wrong. expected=%q, got=%q", i, tt.expectedLiteral, tok.Literal)
+			t.Fatalf("inputTokens[%d] - literal wrong. expected=%q, got=%q", i, tt.expectedLiteral, tok.Literal)
 		}
 	}
 }
