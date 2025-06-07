@@ -1,7 +1,7 @@
 # go-himeji
 My interpreter and my compiler for my programming language ***himeji***.  
 
-[./images/himeji.jpg]  
+![himeji](./images/himeji.jpg) 
 
 ## References
 
