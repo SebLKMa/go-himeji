@@ -29,5 +29,67 @@ func (p *Parser) nextToken() {
 }
 
 func (p *Parser) ParseProgram() *ast.Program {
-	return nil
+	program := &ast.Program{}
+	program.Statements = []ast.Statement{}
+
+	for p.curToken.Type != tk.EOF {
+		stmt := p.parseStatement()
+		if stmt != nil {
+			program.Statements = append(program.Statements, stmt)
+		}
+		p.nextToken()
+	}
+
+	return program
+}
+
+func (p *Parser) parseStatement() ast.Statement {
+	switch p.curToken.Type {
+	case tk.LET:
+		return p.parseLetStatement()
+	default:
+		return nil
+	}
+}
+
+func (p *Parser) parseLetStatement() *ast.LetStatement {
+	stmt := &ast.LetStatement{Token: p.curToken}
+
+	// Next token is expected to be an identifier
+	// If so, move to next peek. Otherwise, fails
+	if !p.moveNextIfPeekTokenIs(tk.IDENT) {
+		return nil
+	}
+
+	stmt.Name = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+
+	// Next token is expected to be an equal sign
+	// If so, move to next peek. Otherwise, fails
+	if !p.moveNextIfPeekTokenIs(tk.ASSIGN) {
+		return nil
+	}
+
+	// TODO: Ignoring expressions after the ASSIGN token, skip to semicolon for now
+	for !p.curTokenIs(tk.SEMICOLON) {
+		p.nextToken()
+	}
+
+	return stmt
+}
+
+func (p *Parser) curTokenIs(t tk.TokenType) bool {
+	return p.curToken.Type == t
+}
+
+func (p *Parser) peekTokenIs(t tk.TokenType) bool {
+	return p.peekToken.Type == t
+}
+
+// moveNextIfPeekTokenIs moves current tokem to next token if the peek token is t
+func (p *Parser) moveNextIfPeekTokenIs(t tk.TokenType) bool {
+	if p.peekTokenIs(t) {
+		p.nextToken() // move to next token
+		return true
+	}
+	return false
 }

@@ -1,12 +1,14 @@
 package parser
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/seblkma/go-himeji/ast"
 	"github.com/seblkma/go-himeji/lexer"
 )
 
+// GOFLAGS="-count=1" go test -run TestLetStatements
 func TestLetStatements(t *testing.T) {
 	input := `
 	let x = 20;
@@ -60,5 +62,6 @@ func testLetStatement(t *testing.T, s ast.Statement, name string) bool {
 		return false
 	}
 
+	fmt.Printf("testLetStatement\n%+v\n", letStmt)
 	return true
 }
