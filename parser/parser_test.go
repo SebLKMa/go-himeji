@@ -22,8 +22,46 @@ func TestLetStatements(t *testing.T) {
 		t.Fatalf("ParseProgram() returned nil\n")
 	}
 	if len(program.Statements) != 3 {
-		t.Fatalf("Program statements expected %d, got %d\n", 3, len(program.Statements))
+		t.Fatalf("Program statements expected %d, but got %d\n", 3, len(program.Statements))
 	}
+
+	checkParserErrors(t, p)
+
+	expectedIdentifiers := []struct {
+		expectedIdentifier string
+	}{
+		{"x"},
+		{"y"},
+		{"foobar"},
+	}
+
+	for i, ei := range expectedIdentifiers {
+		stmt := program.Statements[i]
+		if !testLetStatement(t, stmt, ei.expectedIdentifier) {
+			return
+		}
+	}
+}
+
+// GOFLAGS="-count=1" go test -run TestLetStatementsError
+func TestLetStatementsError(t *testing.T) {
+	input := `
+	let x 20;
+	let = 22;
+	let 838383;
+	`
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	if program == nil {
+		t.Fatalf("ParseProgram() returned nil\n")
+	}
+	if len(program.Statements) != 3 {
+		t.Fatalf("Program statements expected %d, but got %d\n", 3, len(program.Statements))
+	}
+
+	checkParserErrors(t, p)
+
 	expectedIdentifiers := []struct {
 		expectedIdentifier string
 	}{
@@ -42,7 +80,7 @@ func TestLetStatements(t *testing.T) {
 
 func testLetStatement(t *testing.T, s ast.Statement, name string) bool {
 	if s.TokenLiteral() != "let" {
-		t.Errorf("s.TokenLiteral expected 'let' but got=%s\n", s.TokenLiteral())
+		t.Errorf("s.TokenLiteral expected 'let' but got=%q\n", s.TokenLiteral())
 		return false
 	}
 
@@ -64,4 +102,18 @@ func testLetStatement(t *testing.T, s ast.Statement, name string) bool {
 
 	fmt.Printf("testLetStatement\n%+v\n", letStmt)
 	return true
+}
+
+func checkParserErrors(t *testing.T, p *Parser) {
+	errors := p.errors
+	if len(errors) == 0 {
+		fmt.Println("no error")
+		return
+	}
+
+	t.Errorf("Parser has %d errors\n", len(errors))
+	for _, msg := range errors {
+		t.Errorf("Parser error: %q", msg)
+	}
+	t.FailNow()
 }
