@@ -104,6 +104,35 @@ func testLetStatement(t *testing.T, s ast.Statement, name string) bool {
 	return true
 }
 
+// GOFLAGS="-count=1" go test -run TestReturnStatements
+func TestReturnStatements(t *testing.T) {
+	input := `
+	return 20;
+	return 22;
+	return 838383;
+	`
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	if program == nil {
+		t.Fatalf("ParseProgram() returned nil\n")
+	}
+	if len(program.Statements) != 3 {
+		t.Fatalf("Program statements expected %d, but got %d\n", 3, len(program.Statements))
+	}
+
+	for _, stmt := range program.Statements {
+		rs, ok := stmt.(*ast.ReturnStatement)
+		if !ok {
+			t.Errorf("stmt expected type is ast.ReturnStatement, but got %T\n", stmt)
+			continue
+		}
+		if rs.TokenLiteral() != "return" {
+			t.Errorf("stmt unexpected literal value %s\n", rs.TokenLiteral())
+		}
+	}
+}
+
 func checkParserErrors(t *testing.T, p *Parser) {
 	errors := p.errors
 	if len(errors) == 0 {
