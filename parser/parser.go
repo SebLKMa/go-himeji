@@ -2,6 +2,7 @@ package parser
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/seblkma/go-himeji/ast"
 	"github.com/seblkma/go-himeji/lexer"
@@ -47,6 +48,7 @@ func New(l *lexer.Lexer) *Parser {
 
 	p.prefixParseFns = make(map[tk.TokenType]prefixParseFn)
 	p.registerPrefix(tk.IDENT, p.parseIdentifier)
+	p.registerPrefix(tk.INT, p.parseIntegerLiteral)
 
 	return p
 }
@@ -71,9 +73,9 @@ func (p *Parser) ParseProgram() *ast.Program {
 
 	for p.curToken.Type != tk.EOF {
 		stmt := p.parseStatement()
-		if stmt != nil {
-			program.Statements = append(program.Statements, stmt)
-		}
+		//if stmt != nil { parseStatement never returns nil
+		program.Statements = append(program.Statements, stmt)
+		//}
 		p.nextToken()
 	}
 
@@ -145,6 +147,7 @@ func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 func (p *Parser) parseExpression(precedence int) ast.Expression {
 	doPrefix := p.prefixParseFns[p.curToken.Type]
 	if doPrefix == nil {
+		fmt.Printf("Failed to find prefixParseFn for %T\n", p.curToken.Type)
 		return nil
 	}
 	leftExpr := doPrefix()
@@ -154,6 +157,21 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 func (p *Parser) parseIdentifier() ast.Expression {
 	// Do not move to next token.
 	return &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+}
+
+func (p *Parser) parseIntegerLiteral() ast.Expression {
+	lit := &ast.IntegerLiteral{Token: p.curToken}
+	value, err := strconv.ParseInt(p.curToken.Literal, 0, 64)
+	if err != nil {
+		msg := fmt.Sprintf("could not parse %q as integer", p.curToken.Literal)
+		p.errors = append(p.errors, msg)
+		return nil
+	}
+
+	lit.Value = value
+
+	// Do not move to next token.
+	return lit
 }
 
 func (p *Parser) curTokenIs(t tk.TokenType) bool {

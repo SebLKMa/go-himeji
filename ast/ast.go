@@ -131,3 +131,17 @@ func (i *Identifier) TokenLiteral() string { return i.Token.Literal }
 
 // Implements Node
 func (i *Identifier) String() string { return i.Value }
+
+type IntegerLiteral struct {
+	Token tk.Token // token.INT
+	Value int64
+}
+
+// Implements Expression
+func (il *IntegerLiteral) expressionNode() {}
+
+// Implements Node
+func (il *IntegerLiteral) TokenLiteral() string { return il.Token.Literal }
+
+// Implements Node
+func (il *IntegerLiteral) String() string { return il.Token.Literal } // Value is int64

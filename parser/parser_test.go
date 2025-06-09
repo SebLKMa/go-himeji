@@ -8,6 +8,20 @@ import (
 	"github.com/seblkma/go-himeji/lexer"
 )
 
+func checkParserErrors(t *testing.T, p *Parser) {
+	errors := p.errors
+	if len(errors) == 0 {
+		fmt.Println("no error")
+		return
+	}
+
+	t.Errorf("Parser has %d errors\n", len(errors))
+	for _, msg := range errors {
+		t.Errorf("Parser error: %q", msg)
+	}
+	t.FailNow()
+}
+
 // GOFLAGS="-count=1" go test -run TestLetStatements
 func TestLetStatements(t *testing.T) {
 	input := `
@@ -157,7 +171,7 @@ func TestIdentifierExpression(t *testing.T) {
 	// Identifiers will not have semi-colon
 
 	if ident.Value != "foobar" {
-		t.Errorf("identifier expected value is %s, but got %s\n", input, ident.Value)
+		t.Errorf("identifier expected value is foobar, but got %s\n", ident.Value)
 	}
 	if ident.TokenLiteral() != "foobar" {
 		t.Errorf("identifier unexpected literal value %s\n", ident.TokenLiteral())
@@ -165,16 +179,35 @@ func TestIdentifierExpression(t *testing.T) {
 
 }
 
-func checkParserErrors(t *testing.T, p *Parser) {
-	errors := p.errors
-	if len(errors) == 0 {
-		fmt.Println("no error")
-		return
+// GOFLAGS="-count=1" go test -run TestIntegerLiteralExpression
+func TestIntegerLiteralExpression(t *testing.T) {
+	input := `42;`
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("Program statements expected %d, but got %d\n", 1, len(program.Statements))
+	}
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("stmt expected type is ast.ExpressionStatement, but got %T\n", program.Statements[0])
 	}
 
-	t.Errorf("Parser has %d errors\n", len(errors))
-	for _, msg := range errors {
-		t.Errorf("Parser error: %q", msg)
+	literal, ok := stmt.Expression.(*ast.IntegerLiteral)
+	if !ok {
+		t.Fatalf("statement expected type is ast.IntegerLiteral, but got %T\n", stmt.Expression)
 	}
-	t.FailNow()
+
+	// Identifiers will not have semi-colon
+
+	if literal.Value != 42 {
+		t.Errorf("identifier expected value is 42, but got %d\n", &literal.Value)
+	}
+	if literal.TokenLiteral() != "42" {
+		t.Errorf("identifier unexpected literal value %s\n", literal.TokenLiteral())
+	}
+
 }
