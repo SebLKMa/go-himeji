@@ -1,11 +1,14 @@
 package ast
 
 import (
+	"bytes"
+
 	tk "github.com/seblkma/go-himeji/token" // naming conflicts with go/token
 )
 
 type Node interface {
 	TokenLiteral() string
+	String() string
 }
 
 type Statement interface {
@@ -31,6 +34,17 @@ func (p *Program) TokenLiteral() string {
 	return ""
 }
 
+// Implements the Note interface
+func (p *Program) String() string {
+	var out bytes.Buffer
+
+	for _, s := range p.Statements {
+		out.WriteString(s.String())
+	}
+
+	return out.String()
+}
+
 type LetStatement struct {
 	Token tk.Token // token.LET
 	Name  *Identifier
@@ -43,6 +57,22 @@ func (ls *LetStatement) statementNode() {}
 // Implements Node
 func (ls *LetStatement) TokenLiteral() string { return ls.Token.Literal }
 
+// Implements Node
+func (ls *LetStatement) String() string {
+	var out bytes.Buffer
+
+	out.WriteString(ls.TokenLiteral() + " ")
+	out.WriteString(ls.Name.String())
+	out.WriteString(" = ")
+
+	if ls.Value != nil {
+		out.WriteString(ls.Value.String())
+	}
+	out.WriteString(";")
+
+	return out.String()
+}
+
 type ReturnStatement struct {
 	Token tk.Token // token.RETURN
 	Value Expression
@@ -53,6 +83,21 @@ func (rs *ReturnStatement) statementNode() {}
 
 // Implements Node
 func (rs *ReturnStatement) TokenLiteral() string { return rs.Token.Literal }
+
+// Implements Node
+func (rs *ReturnStatement) String() string {
+	var out bytes.Buffer
+
+	out.WriteString(rs.TokenLiteral() + " ")
+	out.WriteString(" = ")
+
+	if rs.Value != nil {
+		out.WriteString(rs.Value.String())
+	}
+	out.WriteString(";")
+
+	return out.String()
+}
 
 type ExpressionStatement struct {
 	Token      tk.Token // the first token of the expression
@@ -65,6 +110,14 @@ func (es *ExpressionStatement) statementNode() {}
 // Implements Node
 func (es *ExpressionStatement) TokenLiteral() string { return es.Token.Literal }
 
+// Implements Node
+func (es *ExpressionStatement) String() string {
+	if es.Expression != nil {
+		return es.Expression.String()
+	}
+	return ""
+}
+
 type Identifier struct {
 	Token tk.Token // token.IDENT
 	Value string
@@ -75,3 +128,6 @@ func (i *Identifier) expressionNode() {}
 
 // Implements Node
 func (i *Identifier) TokenLiteral() string { return i.Token.Literal }
+
+// Implements Node
+func (i *Identifier) String() string { return i.Value }
