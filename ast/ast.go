@@ -54,6 +54,17 @@ func (rs *ReturnStatement) statementNode() {}
 // Implements Node
 func (rs *ReturnStatement) TokenLiteral() string { return rs.Token.Literal }
 
+type ExpressionStatement struct {
+	Token      tk.Token // the first token of the expression
+	Expression Expression
+}
+
+// Implements Statement
+func (es *ExpressionStatement) statementNode() {}
+
+// Implements Node
+func (es *ExpressionStatement) TokenLiteral() string { return es.Token.Literal }
+
 type Identifier struct {
 	Token tk.Token // token.IDENT
 	Value string
