@@ -8,6 +8,24 @@ import (
 	tk "github.com/seblkma/go-himeji/token" // naming conflicts with go/token
 )
 
+// For evaluation order - precedence
+const (
+	_ int = iota
+	LOWEST
+	EQUALS        // ==
+	LESSERGREATER // > or <
+	SUM           // +
+	PRODUCT       // *
+	PREFIX        // -X or !X
+	CALL          // myFunction(X)
+)
+
+// Function types for associating to each specific token type
+type (
+	prefixParseFn func() ast.Expression
+	infixParseFn  func(ast.Expression) ast.Expression
+)
+
 type Parser struct {
 	l *lexer.Lexer
 
@@ -15,6 +33,9 @@ type Parser struct {
 	peekToken tk.Token // next token
 
 	errors []string
+
+	prefixParseFns map[tk.TokenType]prefixParseFn
+	infixParseFns  map[tk.TokenType]infixParseFn
 }
 
 func New(l *lexer.Lexer) *Parser {
@@ -23,6 +44,9 @@ func New(l *lexer.Lexer) *Parser {
 	// Ensures curToken and peekToken are set
 	p.nextToken()
 	p.nextToken()
+
+	p.prefixParseFns = make(map[tk.TokenType]prefixParseFn)
+	p.registerPrefix(tk.IDENT, p.parseIdentifier)
 
 	return p
 }
@@ -63,7 +87,7 @@ func (p *Parser) parseStatement() ast.Statement {
 	case tk.RETURN:
 		return p.parseReturnStatement()
 	default:
-		return nil
+		return p.parseExpressionStatement()
 	}
 }
 
@@ -105,6 +129,33 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 	return stmt
 }
 
+func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
+	stmt := &ast.ExpressionStatement{Token: p.curToken}
+
+	stmt.Expression = p.parseExpression(LOWEST)
+
+	// Move to next token if semi-colon, semi-colon is optional in an expression
+	if p.peekTokenIs(tk.SEMICOLON) {
+		p.nextToken()
+	}
+
+	return stmt
+}
+
+func (p *Parser) parseExpression(precedence int) ast.Expression {
+	doPrefix := p.prefixParseFns[p.curToken.Type]
+	if doPrefix == nil {
+		return nil
+	}
+	leftExpr := doPrefix()
+	return leftExpr
+}
+
+func (p *Parser) parseIdentifier() ast.Expression {
+	// Do not move to next token.
+	return &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+}
+
 func (p *Parser) curTokenIs(t tk.TokenType) bool {
 	return p.curToken.Type == t
 }
@@ -122,4 +173,12 @@ func (p *Parser) moveNextIfPeekTokenIs(t tk.TokenType) bool {
 	}
 	p.peekError(t)
 	return false
+}
+
+func (p *Parser) registerPrefix(tokenType tk.TokenType, fn prefixParseFn) {
+	p.prefixParseFns[tokenType] = fn
+}
+
+func (p *Parser) registerInfix(tokenType tk.TokenType, fn infixParseFn) {
+	p.infixParseFns[tokenType] = fn
 }

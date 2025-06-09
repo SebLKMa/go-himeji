@@ -133,6 +133,38 @@ func TestReturnStatements(t *testing.T) {
 	}
 }
 
+// GOFLAGS="-count=1" go test -run TestIdentifierExpression
+func TestIdentifierExpression(t *testing.T) {
+	input := `foobar;`
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("Program statements expected %d, but got %d\n", 1, len(program.Statements))
+	}
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("stmt expected type is ast.ExpressionStatement, but got %T\n", program.Statements[0])
+	}
+	ident, ok := stmt.Expression.(*ast.Identifier)
+	if !ok {
+		t.Fatalf("statement expected type is ast.Identifier, but got %T\n", stmt.Expression)
+	}
+
+	// Identifiers will not have semi-colon
+
+	if ident.Value != "foobar" {
+		t.Errorf("identifier expected value is %s, but got %s\n", input, ident.Value)
+	}
+	if ident.TokenLiteral() != "foobar" {
+		t.Errorf("identifier unexpected literal value %s\n", ident.TokenLiteral())
+	}
+
+}
+
 func checkParserErrors(t *testing.T, p *Parser) {
 	errors := p.errors
 	if len(errors) == 0 {
