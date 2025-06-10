@@ -179,8 +179,8 @@ func (p *Parser) parsePrefixExpression() ast.Expression {
 	return expr
 }
 
-func (p *Parser) noPrefixParseFnError(t tk.TokenType) {
-	msg := fmt.Sprintf("no prefix parse function for %s", t)
+func (p *Parser) noParseFnError(t tk.TokenType) {
+	msg := fmt.Sprintf("no parse function for %s", t)
 	p.errors = append(p.errors, msg)
 }
 
@@ -193,17 +193,17 @@ func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 
 	precedence := p.curPrecedence()
 	p.nextToken()                              // moves to next token, to parse the rhs expression
-	expr.Right = p.parseExpression(precedence) // recursive call to parseExpression
+	expr.Right = p.parseExpression(precedence) // recursive call to parseExpression, get back the rhs identifier
 
 	return expr
 }
 
-// parseExpression parses prefix by lookup table
+// parseExpression parses prefixes by lookup tables - heart of the Pratt parser
 func (p *Parser) parseExpression(precedence int) ast.Expression {
 	doPrefix := p.prefixParseFns[p.curToken.Type]
 	if doPrefix == nil {
 		//fmt.Printf("Failed to find prefixParseFn for %T\n", p.curToken.Type)
-		p.noPrefixParseFnError(p.curToken.Type)
+		p.noParseFnError(p.curToken.Type)
 		return nil
 	}
 	leftExpr := doPrefix()
@@ -211,7 +211,7 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 	for !p.peekTokenIs(tk.SEMICOLON) && precedence < p.peekPrecedence() {
 		doInfix := p.infixParseFns[p.peekToken.Type]
 		if doInfix == nil {
-			fmt.Printf("Failed to find infixParseFn for %T\n", p.peekToken.Type)
+			p.noParseFnError(p.peekToken.Type)
 			return leftExpr
 		}
 
