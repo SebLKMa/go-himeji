@@ -22,6 +22,54 @@ func checkParserErrors(t *testing.T, p *Parser) {
 	t.FailNow()
 }
 
+func testLetStatement(t *testing.T, s ast.Statement, name string) bool {
+	if s.TokenLiteral() != "let" {
+		t.Errorf("s.TokenLiteral expected 'let' but got=%q\n", s.TokenLiteral())
+		return false
+	}
+
+	letStmt, ok := s.(*ast.LetStatement) // type conversion, may or may not be LetStatement
+	if !ok {
+		t.Errorf("s expected LetStatement but got=%T\n", s)
+		return false
+	}
+
+	if letStmt.Name.Value != name {
+		t.Errorf("letStmt.Name.Value expected %s but got=%s\n", name, letStmt.Name.Value)
+		return false
+	}
+
+	if letStmt.Name.TokenLiteral() != name {
+		t.Errorf("letStmt.Name.TokenLiteral() expected %s but got=%s\n", name, letStmt.Name.TokenLiteral())
+		return false
+	}
+
+	fmt.Printf("testLetStatement\n%+v\n", letStmt)
+	return true
+}
+
+// Helper function to test the right value of prefix expression
+func testIntegerLiteral(t *testing.T, il ast.Expression, value int64) bool {
+	integ, ok := il.(*ast.IntegerLiteral)
+	if !ok {
+		t.Errorf("il not *ast.IntegerLiteral. got=%T", il)
+		return false
+	}
+
+	// Checks numeric
+	if integ.Value != value {
+		t.Errorf("integ.Value not %d. got=%d", value, integ.Value)
+		return false
+	}
+	// Check string
+	if integ.TokenLiteral() != fmt.Sprintf("%d", value) {
+		t.Errorf("integ.TokenLiteral not %d. got=%s", value, integ.TokenLiteral())
+		return false
+	}
+
+	return true
+}
+
 // GOFLAGS="-count=1" go test -run TestLetStatements
 func TestLetStatements(t *testing.T) {
 	input := `
@@ -90,32 +138,6 @@ func TestLetStatementsError(t *testing.T) {
 			return
 		}
 	}
-}
-
-func testLetStatement(t *testing.T, s ast.Statement, name string) bool {
-	if s.TokenLiteral() != "let" {
-		t.Errorf("s.TokenLiteral expected 'let' but got=%q\n", s.TokenLiteral())
-		return false
-	}
-
-	letStmt, ok := s.(*ast.LetStatement) // type conversion, may or may not be LetStatement
-	if !ok {
-		t.Errorf("s expected LetStatement but got=%T\n", s)
-		return false
-	}
-
-	if letStmt.Name.Value != name {
-		t.Errorf("letStmt.Name.Value expected %s but got=%s\n", name, letStmt.Name.Value)
-		return false
-	}
-
-	if letStmt.Name.TokenLiteral() != name {
-		t.Errorf("letStmt.Name.TokenLiteral() expected %s but got=%s\n", name, letStmt.Name.TokenLiteral())
-		return false
-	}
-
-	fmt.Printf("testLetStatement\n%+v\n", letStmt)
-	return true
 }
 
 // GOFLAGS="-count=1" go test -run TestReturnStatements
@@ -253,24 +275,67 @@ func TestParsingPrefixExpressions(t *testing.T) {
 	}
 }
 
-// Helper function to test the right value of prefix expression
-func testIntegerLiteral(t *testing.T, il ast.Expression, value int64) bool {
-	integ, ok := il.(*ast.IntegerLiteral)
-	if !ok {
-		t.Errorf("il not *ast.IntegerLiteral. got=%T", il)
-		return false
+// GOFLAGS="-count=1" go test -run TestParsingInfixExpressions
+func TestParsingInfixExpressions(t *testing.T) {
+	/* input:
+	5 + 5;
+	5 - 5;
+	5 * 5;
+	5 / 5;
+	5 > 5;
+	5 < 5;
+	5 == 5;
+	5 != 5;
+	*/
+	infixInputs := []struct {
+		input      string
+		leftValue  int64
+		operator   string
+		rightValue int64
+	}{
+		{"5 + 5", 5, "+", 5},
+		{"5 - 5", 5, "-", 5},
+		{"5 * 5", 5, "*", 5},
+		{"5 / 5", 5, "/", 5},
+		{"5 > 5", 5, ">", 5},
+		{"5 < 5", 5, "<", 5},
+		{"5 == 5", 5, "==", 5},
+		{"5 != 5", 5, "!=", 5},
 	}
 
-	// Checks numeric
-	if integ.Value != value {
-		t.Errorf("integ.Value not %d. got=%d", value, integ.Value)
-		return false
-	}
-	// Check string
-	if integ.TokenLiteral() != fmt.Sprintf("%d", value) {
-		t.Errorf("integ.TokenLiteral not %d. got=%s", value, integ.TokenLiteral())
-		return false
-	}
+	for _, ii := range infixInputs {
+		l := lexer.New(ii.input)
+		p := New(l)
+		program := p.ParseProgram()
+		checkParserErrors(t, p)
 
-	return true
+		if len(program.Statements) != 1 {
+			t.Fatalf("program.Statements does not contain %d statements. got=%d\n", 1, len(program.Statements))
+		}
+
+		stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+		if !ok {
+			t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T", program.Statements[0])
+		}
+
+		expr, ok := stmt.Expression.(*ast.InfixExpression)
+		if !ok {
+			t.Fatalf("stmt is not ast.InfixExpression. got=%T", stmt.Expression)
+		}
+
+		if !testIntegerLiteral(t, expr.Left, ii.leftValue) {
+			t.Fatalf("expr.Left inconsistent with %d\n", ii.leftValue)
+			return
+		}
+
+		if expr.Operator != ii.operator {
+			t.Fatalf("expr.Operator is not '%s'. got=%s", ii.operator, expr.Operator)
+			return
+		}
+
+		if !testIntegerLiteral(t, expr.Right, ii.rightValue) {
+			t.Fatalf("expr.Right inconsistent with %d\n", ii.rightValue)
+		}
+
+	}
 }
