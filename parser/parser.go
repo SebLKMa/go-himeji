@@ -91,7 +91,7 @@ func (p *Parser) parseStatement() ast.Statement {
 	case tk.RETURN:
 		return p.parseReturnStatement()
 	default:
-		return p.parseExpressionStatement()
+		return p.parseExpressionStatement() // parses prefix, infix as well
 	}
 }
 
@@ -149,9 +149,9 @@ func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 func (p *Parser) parsePrefixExpression() ast.Expression {
 	expr := &ast.PrefixExpression{Token: p.curToken, Operator: p.curToken.Literal}
 
-	p.nextToken()
+	p.nextToken() // moves to next token, to parse the rhs expression
 
-	expr.Right = p.parseExpression(PREFIX)
+	expr.Right = p.parseExpression(PREFIX) // recursive call to parseExpression
 
 	return expr
 }
@@ -161,6 +161,7 @@ func (p *Parser) noPrefixParseFnError(t tk.TokenType) {
 	p.errors = append(p.errors, msg)
 }
 
+// parseExpression parses prefix by lookup table
 func (p *Parser) parseExpression(precedence int) ast.Expression {
 	doPrefix := p.prefixParseFns[p.curToken.Type]
 	if doPrefix == nil {
