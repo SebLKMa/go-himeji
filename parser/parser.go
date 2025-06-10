@@ -21,6 +21,18 @@ const (
 	CALL          // myFunction(X)
 )
 
+// Precedence table, e.g. multiplication has higher precedence than addition
+var precedences = map[tk.TokenType]int{
+	tk.EQ:       EQUALS,
+	tk.NOT_EQ:   EQUALS,
+	tk.LT:       LESSERGREATER,
+	tk.GT:       LESSERGREATER,
+	tk.PLUS:     SUM,
+	tk.MINUS:    SUM,
+	tk.SLASH:    PRODUCT,
+	tk.ASTERISK: PRODUCT,
+}
+
 // Function types for associating to each specific token type
 type (
 	prefixParseFn func() ast.Expression
@@ -46,11 +58,22 @@ func New(l *lexer.Lexer) *Parser {
 	p.nextToken()
 	p.nextToken()
 
+	// prefix functions
 	p.prefixParseFns = make(map[tk.TokenType]prefixParseFn)
 	p.registerPrefix(tk.IDENT, p.parseIdentifier)
 	p.registerPrefix(tk.INT, p.parseIntegerLiteral)
 	p.registerPrefix(tk.BANG, p.parsePrefixExpression)
 	p.registerPrefix(tk.MINUS, p.parsePrefixExpression)
+	// infix functions
+	p.infixParseFns = make(map[tk.TokenType]infixParseFn)
+	p.registerInfix(tk.PLUS, p.parseInfixExpression)
+	p.registerInfix(tk.MINUS, p.parseInfixExpression)
+	p.registerInfix(tk.SLASH, p.parseInfixExpression)
+	p.registerInfix(tk.ASTERISK, p.parseInfixExpression)
+	p.registerInfix(tk.EQ, p.parseInfixExpression)
+	p.registerInfix(tk.NOT_EQ, p.parseInfixExpression)
+	p.registerInfix(tk.LT, p.parseInfixExpression)
+	p.registerInfix(tk.GT, p.parseInfixExpression)
 
 	return p
 }
@@ -161,6 +184,20 @@ func (p *Parser) noPrefixParseFnError(t tk.TokenType) {
 	p.errors = append(p.errors, msg)
 }
 
+func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
+	expr := &ast.InfixExpression{
+		Token:    p.curToken,
+		Operator: p.curToken.Literal,
+		Left:     left,
+	}
+
+	precedence := p.curPrecedence()
+	p.nextToken()                              // moves to next token, to parse the rhs expression
+	expr.Right = p.parseExpression(precedence) // recursive call to parseExpression
+
+	return expr
+}
+
 // parseExpression parses prefix by lookup table
 func (p *Parser) parseExpression(precedence int) ast.Expression {
 	doPrefix := p.prefixParseFns[p.curToken.Type]
@@ -170,6 +207,19 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 		return nil
 	}
 	leftExpr := doPrefix()
+
+	for !p.peekTokenIs(tk.SEMICOLON) && precedence < p.peekPrecedence() {
+		doInfix := p.infixParseFns[p.peekToken.Type]
+		if doInfix == nil {
+			fmt.Printf("Failed to find infixParseFn for %T\n", p.peekToken.Type)
+			return leftExpr
+		}
+
+		p.nextToken()
+
+		leftExpr = doInfix(leftExpr)
+	}
+
 	return leftExpr
 }
 
@@ -218,4 +268,18 @@ func (p *Parser) registerPrefix(tokenType tk.TokenType, fn prefixParseFn) {
 
 func (p *Parser) registerInfix(tokenType tk.TokenType, fn infixParseFn) {
 	p.infixParseFns[tokenType] = fn
+}
+
+func (p *Parser) peekPrecedence() int {
+	if p, ok := precedences[p.peekToken.Type]; ok {
+		return p
+	}
+	return LOWEST
+}
+
+func (p *Parser) curPrecedence() int {
+	if p, ok := precedences[p.curToken.Type]; ok {
+		return p
+	}
+	return LOWEST
 }
