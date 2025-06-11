@@ -191,3 +191,17 @@ func (ie InfixExpression) String() string {
 	out.WriteString(")")
 	return out.String()
 }
+
+type Boolean struct {
+	Token tk.Token // token.BOOL
+	Value bool
+}
+
+// Implements Expression
+func (b *Boolean) expressionNode() {}
+
+// Implements Node
+func (b *Boolean) TokenLiteral() string { return b.Token.Literal }
+
+// Implements Node
+func (b *Boolean) String() string { return b.Token.Literal }

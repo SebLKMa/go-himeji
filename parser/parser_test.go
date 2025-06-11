@@ -463,3 +463,42 @@ func TestInfixStatements(t *testing.T) {
 
 	testInfixExpression(t, stmt.Expression, "alice", "*", "bob")
 }
+
+// GOFLAGS="-count=1" go test -run TestBooleanExpression
+func TestBooleanExpression(t *testing.T) {
+	/*
+		true;
+		false;
+		let foobar = true;
+		let barfoo = false;
+	*/
+	input := `true;`
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("Program statements expected %d, but got %d\n", 1, len(program.Statements))
+	}
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("stmt expected type is ast.ExpressionStatement, but got %T\n", program.Statements[0])
+	}
+
+	b, ok := stmt.Expression.(*ast.Boolean)
+	if !ok {
+		t.Fatalf("statement expected type is ast.Boolean, but got %T\n", stmt.Expression)
+	}
+
+	// Identifiers will not have semi-colon
+
+	if !b.Value {
+		t.Errorf("identifier expected value is 42, but got %v\n", &b.Value)
+	}
+	if b.TokenLiteral() != "true" {
+		t.Errorf("identifier unexpected literal value %s\n", b.TokenLiteral())
+	}
+
+}

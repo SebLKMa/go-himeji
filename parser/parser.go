@@ -64,6 +64,8 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(tk.INT, p.parseIntegerLiteral)
 	p.registerPrefix(tk.BANG, p.parsePrefixExpression)
 	p.registerPrefix(tk.MINUS, p.parsePrefixExpression)
+	p.registerPrefix(tk.TRUE, p.parseBoolean)
+	p.registerPrefix(tk.FALSE, p.parseBoolean)
 	// infix functions
 	p.infixParseFns = make(map[tk.TokenType]infixParseFn)
 	p.registerInfix(tk.PLUS, p.parseInfixExpression)
@@ -247,6 +249,12 @@ func (p *Parser) parseIntegerLiteral() ast.Expression {
 
 	// Do not move to next token.
 	return lit
+}
+
+func (p *Parser) parseBoolean() ast.Expression {
+	defer untrace(trace("parseBoolean"))
+	b := &ast.Boolean{Token: p.curToken, Value: p.curTokenIs(tk.TRUE)}
+	return b
 }
 
 func (p *Parser) curTokenIs(t tk.TokenType) bool {
