@@ -157,6 +157,7 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 }
 
 func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
+	defer untrace(trace("parseExpressionStatement"))
 	stmt := &ast.ExpressionStatement{Token: p.curToken}
 
 	stmt.Expression = p.parseExpression(LOWEST)
@@ -169,37 +170,9 @@ func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 	return stmt
 }
 
-func (p *Parser) parsePrefixExpression() ast.Expression {
-	expr := &ast.PrefixExpression{Token: p.curToken, Operator: p.curToken.Literal}
-
-	p.nextToken() // moves to next token, to parse the rhs expression
-
-	expr.Right = p.parseExpression(PREFIX) // recursive call to parseExpression
-
-	return expr
-}
-
-func (p *Parser) noParseFnError(t tk.TokenType) {
-	msg := fmt.Sprintf("no parse function for %s", t)
-	p.errors = append(p.errors, msg)
-}
-
-func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
-	expr := &ast.InfixExpression{
-		Token:    p.curToken,
-		Operator: p.curToken.Literal,
-		Left:     left,
-	}
-
-	precedence := p.curPrecedence()
-	p.nextToken()                              // moves to next token, to parse the rhs expression
-	expr.Right = p.parseExpression(precedence) // recursive call to parseExpression, get back the rhs identifier
-
-	return expr
-}
-
 // parseExpression parses prefixes by lookup tables - heart of the Pratt parser
 func (p *Parser) parseExpression(precedence int) ast.Expression {
+	defer untrace(trace("parseExpression"))
 	doPrefix := p.prefixParseFns[p.curToken.Type]
 	if doPrefix == nil {
 		//fmt.Printf("Failed to find prefixParseFn for %T\n", p.curToken.Type)
@@ -208,6 +181,7 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 	}
 	leftExpr := doPrefix()
 
+	// Attempts to find an infix with higher precedence by advancing the tokens
 	for !p.peekTokenIs(tk.SEMICOLON) && precedence < p.peekPrecedence() {
 		doInfix := p.infixParseFns[p.peekToken.Type]
 		if doInfix == nil {
@@ -223,12 +197,44 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 	return leftExpr
 }
 
+func (p *Parser) parsePrefixExpression() ast.Expression {
+	defer untrace(trace("parsePrefixExpression"))
+	expr := &ast.PrefixExpression{Token: p.curToken, Operator: p.curToken.Literal}
+
+	p.nextToken() // moves to next token, to parse the rhs expression
+
+	expr.Right = p.parseExpression(PREFIX) // recursive call to parseExpression
+
+	return expr
+}
+
+func (p *Parser) noParseFnError(t tk.TokenType) {
+	msg := fmt.Sprintf("no parse function for %s", t)
+	p.errors = append(p.errors, msg)
+}
+
+func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
+	defer untrace(trace("parseInfixExpression"))
+	expr := &ast.InfixExpression{
+		Token:    p.curToken,
+		Operator: p.curToken.Literal,
+		Left:     left,
+	}
+
+	precedence := p.curPrecedence()
+	p.nextToken()                              // moves to next token, to parse the rhs expression
+	expr.Right = p.parseExpression(precedence) // recursive call to parseExpression, get back the rhs identifier
+
+	return expr
+}
+
 func (p *Parser) parseIdentifier() ast.Expression {
 	// Do not move to next token.
 	return &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 }
 
 func (p *Parser) parseIntegerLiteral() ast.Expression {
+	defer untrace(trace("parseIntegerLiteral"))
 	lit := &ast.IntegerLiteral{Token: p.curToken}
 	value, err := strconv.ParseInt(p.curToken.Literal, 0, 64)
 	if err != nil {
