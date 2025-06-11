@@ -70,6 +70,57 @@ func testIntegerLiteral(t *testing.T, il ast.Expression, value int64) bool {
 	return true
 }
 
+func testIdentifier(t *testing.T, expr ast.Expression, value string) bool {
+	ident, ok := expr.(*ast.Identifier)
+	if !ok {
+
+		t.Errorf("exp not *ast.Identifier. got=%T", expr)
+		return false
+	}
+	if ident.Value != value {
+		t.Errorf("ident.Value not %s. got=%s", value, ident.Value)
+		return false
+	}
+	if ident.TokenLiteral() != value {
+		t.Errorf("ident.TokenLiteral not %s. got=%s", value, ident.TokenLiteral())
+		return false
+	}
+
+	return true
+}
+
+func testLiteralExpression(t *testing.T, expr ast.Expression, expected interface{}) bool {
+	switch v := expected.(type) {
+	case int:
+		return testIntegerLiteral(t, expr, int64(v))
+	case int64:
+		return testIntegerLiteral(t, expr, v)
+	case string:
+		return testIdentifier(t, expr, v)
+	}
+	t.Errorf("type of exp not handled. got=%T", expr)
+	return false
+}
+
+func testInfixExpression(t *testing.T, expr ast.Expression, left interface{}, operator string, right interface{}) bool {
+	opExpr, ok := expr.(*ast.InfixExpression)
+	if !ok {
+		t.Errorf("exp is not ast.OperatorExpression. got=%T(%s)", expr, expr)
+		return false
+	}
+	if !testLiteralExpression(t, opExpr.Left, left) {
+		return false
+	}
+	if opExpr.Operator != operator {
+		t.Errorf("exp.Operator is not '%s'. got=%q", operator, opExpr.Operator)
+		return false
+	}
+	if !testLiteralExpression(t, opExpr.Right, right) {
+		return false
+	}
+	return true
+}
+
 // GOFLAGS="-count=1" go test -run TestLetStatements
 func TestLetStatements(t *testing.T) {
 	input := `
@@ -372,4 +423,27 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 			t.Errorf("expected=%q, got=%q", ii.expected, actual)
 		}
 	}
+}
+
+// GOFLAGS="-count=1" go test -run TestInfixStatements
+func TestInfixStatements(t *testing.T) {
+	infixInput := "5 + 10"
+
+	l := lexer.New(infixInput)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program.Statements does not contain %d statements. got=%d\n", 1, len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T", program.Statements[0])
+	}
+
+	testInfixExpression(t, stmt.Expression, 5, "+", 10)
+	//testInfixExpression(t, stmt.Expression, "alice", "*", "bob")
+
 }
