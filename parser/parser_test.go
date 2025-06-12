@@ -11,7 +11,7 @@ import (
 func checkParserErrors(t *testing.T, p *Parser) {
 	errors := p.errors
 	if len(errors) == 0 {
-		fmt.Println("no error")
+		//fmt.Println("no error")
 		return
 	}
 
