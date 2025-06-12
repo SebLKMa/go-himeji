@@ -66,6 +66,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(tk.MINUS, p.parsePrefixExpression)
 	p.registerPrefix(tk.TRUE, p.parseBoolean)
 	p.registerPrefix(tk.FALSE, p.parseBoolean)
+	p.registerPrefix(tk.LPAREN, p.parseGroupedExpression)
 	// infix functions
 	p.infixParseFns = make(map[tk.TokenType]infixParseFn)
 	p.registerInfix(tk.PLUS, p.parseInfixExpression)
@@ -255,6 +256,20 @@ func (p *Parser) parseBoolean() ast.Expression {
 	defer untrace(trace("parseBoolean"))
 	b := &ast.Boolean{Token: p.curToken, Value: p.curTokenIs(tk.TRUE)}
 	return b
+}
+
+func (p *Parser) parseGroupedExpression() ast.Expression {
+	defer untrace(trace("parseGroupExpression"))
+
+	// When called here mean current token is LPAREN, move next token and parse again
+	p.nextToken()
+	expr := p.parseExpression(LOWEST)
+	// If after parsing and next token is not RPAREN, then this is not what we expect
+	if !p.moveNextIfPeekTokenIs(tk.RPAREN) {
+		return nil
+	}
+
+	return expr
 }
 
 func (p *Parser) curTokenIs(t tk.TokenType) bool {
