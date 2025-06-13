@@ -67,6 +67,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(tk.TRUE, p.parseBoolean)
 	p.registerPrefix(tk.FALSE, p.parseBoolean)
 	p.registerPrefix(tk.LPAREN, p.parseGroupedExpression)
+	p.registerPrefix(tk.IF, p.parseIfExpression)
 	// infix functions
 	p.infixParseFns = make(map[tk.TokenType]infixParseFn)
 	p.registerInfix(tk.PLUS, p.parseInfixExpression)
@@ -119,6 +120,47 @@ func (p *Parser) parseStatement() ast.Statement {
 	default:
 		return p.parseExpressionStatement() // parses prefix, infix as well
 	}
+}
+
+func (p *Parser) curTokenIs(t tk.TokenType) bool {
+	return p.curToken.Type == t
+}
+
+func (p *Parser) peekTokenIs(t tk.TokenType) bool {
+	return p.peekToken.Type == t
+}
+
+// moveNextIfPeekTokenIs moves current tokem to next token if the peek token is t.
+// It allows the parser to assert correctness of the input statement.
+func (p *Parser) moveNextIfPeekTokenIs(t tk.TokenType) bool {
+	if p.peekTokenIs(t) {
+		p.nextToken() // move to next token
+		return true
+	}
+	p.peekError(t)
+	return false
+}
+
+func (p *Parser) registerPrefix(tokenType tk.TokenType, fn prefixParseFn) {
+	p.prefixParseFns[tokenType] = fn
+}
+
+func (p *Parser) registerInfix(tokenType tk.TokenType, fn infixParseFn) {
+	p.infixParseFns[tokenType] = fn
+}
+
+func (p *Parser) peekPrecedence() int {
+	if p, ok := precedences[p.peekToken.Type]; ok {
+		return p
+	}
+	return LOWEST
+}
+
+func (p *Parser) curPrecedence() int {
+	if p, ok := precedences[p.curToken.Type]; ok {
+		return p
+	}
+	return LOWEST
 }
 
 func (p *Parser) parseLetStatement() *ast.LetStatement {
@@ -272,43 +314,60 @@ func (p *Parser) parseGroupedExpression() ast.Expression {
 	return expr
 }
 
-func (p *Parser) curTokenIs(t tk.TokenType) bool {
-	return p.curToken.Type == t
-}
+func (p *Parser) parseBlockStatement() *ast.BlockStatement {
+	defer untrace(trace("parseBlockStatement"))
 
-func (p *Parser) peekTokenIs(t tk.TokenType) bool {
-	return p.peekToken.Type == t
-}
+	blk := &ast.BlockStatement{Token: p.curToken}
+	blk.Statements = []ast.Statement{}
 
-// moveNextIfPeekTokenIs moves current tokem to next token if the peek token is t.
-// It allows the parser to assert correctness of the input statement.
-func (p *Parser) moveNextIfPeekTokenIs(t tk.TokenType) bool {
-	if p.peekTokenIs(t) {
-		p.nextToken() // move to next token
-		return true
+	p.nextToken()
+
+	for !p.curTokenIs(tk.RBRACE) && !p.curTokenIs(tk.EOF) {
+		stmt := p.parseStatement()
+		if stmt != nil {
+			blk.Statements = append(blk.Statements, stmt)
+		}
+		p.nextToken()
 	}
-	p.peekError(t)
-	return false
+
+	return blk
 }
 
-func (p *Parser) registerPrefix(tokenType tk.TokenType, fn prefixParseFn) {
-	p.prefixParseFns[tokenType] = fn
-}
+func (p *Parser) parseIfExpression() ast.Expression {
+	defer untrace(trace("parseIfExpression"))
 
-func (p *Parser) registerInfix(tokenType tk.TokenType, fn infixParseFn) {
-	p.infixParseFns[tokenType] = fn
-}
+	expr := &ast.IfExpression{Token: p.curToken}
 
-func (p *Parser) peekPrecedence() int {
-	if p, ok := precedences[p.peekToken.Type]; ok {
-		return p
+	// If after parsing and next token is not LPAREN, then this is not what we expect
+	if !p.moveNextIfPeekTokenIs(tk.LPAREN) {
+		return nil
 	}
-	return LOWEST
-}
 
-func (p *Parser) curPrecedence() int {
-	if p, ok := precedences[p.curToken.Type]; ok {
-		return p
+	// Move to next token and parse statement again
+	p.nextToken()
+	expr.Condition = p.parseExpression(LOWEST)
+
+	// If after parsing and next token is not RPAREN, then this is not what we expect
+	if !p.moveNextIfPeekTokenIs(tk.RPAREN) {
+		return nil
 	}
-	return LOWEST
+
+	// If after parsing and next token is not LBRACE, then this is not what we expect
+	if !p.moveNextIfPeekTokenIs(tk.LBRACE) {
+		return nil
+	}
+
+	expr.TrueBlock = p.parseBlockStatement()
+
+	// Must handle the ELSE or RBRACE as well
+
+	if p.peekTokenIs(tk.ELSE) {
+		p.nextToken()
+		if !p.moveNextIfPeekTokenIs(tk.LBRACE) {
+			return nil
+		}
+		expr.FalseBlock = p.parseBlockStatement()
+	}
+
+	return expr
 }
