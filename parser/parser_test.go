@@ -548,3 +548,101 @@ func TestBooleanExpression(t *testing.T) {
 	}
 
 }
+
+// GOFLAGS="-count=1" go test -run TestIfExpression
+func TestIfExpression(t *testing.T) {
+	input := `if (x < y) { x }`
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("Program statements expected %d, but got %d\n", 1, len(program.Statements))
+	}
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("stmt expected type is ast.ExpressionStatement, but got %T\n", program.Statements[0])
+	}
+
+	expr, ok := stmt.Expression.(*ast.IfExpression)
+	if !ok {
+		t.Fatalf("statement expected type is ast.IfExpression, but got %T\n", stmt.Expression)
+	}
+
+	if !testInfixExpression(t, expr.Condition, "x", "<", "y") {
+		return
+	}
+
+	if len(expr.TrueBlock.Statements) != 1 {
+		t.Fatalf("TrueBlock statements expected %d, but got %d\n", 1, len(expr.TrueBlock.Statements))
+	}
+
+	trueBlock, ok := expr.TrueBlock.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("expr.TrueBlock.Statements expected type is ast.ExpressionStatement, but got %T\n", expr.TrueBlock.Statements[0])
+	}
+
+	if !testIdentifier(t, trueBlock.Expression, "x") {
+		return
+	}
+
+	if expr.FalseBlock != nil {
+		t.Errorf("expr.FalseBlock.Statements was not nil. got=%+v", expr.FalseBlock)
+	}
+}
+
+// GOFLAGS="-count=1" go test -run TestIfElseExpression
+func TestIfElseExpression(t *testing.T) {
+	input := `if (x < y) { x } else { y }`
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("Program statements expected %d, but got %d\n", 1, len(program.Statements))
+	}
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("stmt expected type is ast.ExpressionStatement, but got %T\n", program.Statements[0])
+	}
+
+	expr, ok := stmt.Expression.(*ast.IfExpression)
+	if !ok {
+		t.Fatalf("statement expected type is ast.IfExpression, but got %T\n", stmt.Expression)
+	}
+
+	if !testInfixExpression(t, expr.Condition, "x", "<", "y") {
+		return
+	}
+
+	if len(expr.TrueBlock.Statements) != 1 {
+		t.Fatalf("TrueBlock statements expected %d, but got %d\n", 1, len(expr.TrueBlock.Statements))
+	}
+
+	trueBlock, ok := expr.TrueBlock.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("expr.TrueBlock.Statements expected type is ast.ExpressionStatement, but got %T\n", expr.TrueBlock.Statements[0])
+	}
+
+	if !testIdentifier(t, trueBlock.Expression, "x") {
+		return
+	}
+
+	if len(expr.TrueBlock.Statements) != 1 {
+		t.Fatalf("TrueBlock statements expected %d, but got %d\n", 1, len(expr.TrueBlock.Statements))
+	}
+
+	falseBlock, ok := expr.FalseBlock.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("expr.FalseBlock.Statements expected type is ast.ExpressionStatement, but got %T\n", expr.TrueBlock.Statements[0])
+	}
+
+	if !testIdentifier(t, falseBlock.Expression, "y") {
+		return
+	}
+
+}
