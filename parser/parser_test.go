@@ -646,3 +646,48 @@ func TestIfElseExpression(t *testing.T) {
 	}
 
 }
+
+// GOFLAGS="-count=1" go test -run TestFunctionLiteral
+func TestFunctionLiteral(t *testing.T) {
+	input := `fn(x, y) { x + y; }`
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("Program statements expected %d, but got %d\n", 1, len(program.Statements))
+	}
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("stmt expected type is ast.ExpressionStatement, but got %T\n", program.Statements[0])
+	}
+
+	myFunc, ok := stmt.Expression.(*ast.FunctionLiteral)
+	if !ok {
+		t.Fatalf("statement expected type is ast.FunctionLiteral, but got %T\n", stmt.Expression)
+	}
+
+	if len(myFunc.Parameters) != 2 {
+		t.Fatalf("My function parameters expected %d, but got %d\n", 2, len(myFunc.Parameters))
+	}
+
+	if !testLiteralExpression(t, myFunc.Parameters[0], "x") {
+		t.Fatal("function parameter expected x but got ", myFunc.Parameters[0])
+	}
+	if !testLiteralExpression(t, myFunc.Parameters[1], "y") {
+		t.Fatal("function parameter expected y but got ", myFunc.Parameters[1])
+	}
+
+	if len(myFunc.Body.Statements) != 1 {
+		t.Fatalf("My function body statement expected %d, but got %d\n", 1, len(myFunc.Body.Statements))
+	}
+
+	bodyStmt, ok := myFunc.Body.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("My function body statement expectedtype is ast.ExpressionStatement, but got %T\n", myFunc.Body.Statements[0])
+	}
+
+	testInfixExpression(t, bodyStmt.Expression, "x", "+", "y")
+}

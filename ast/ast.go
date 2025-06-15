@@ -2,6 +2,7 @@ package ast
 
 import (
 	"bytes"
+	"strings"
 
 	tk "github.com/seblkma/go-himeji/token" // naming conflicts with go/token
 )
@@ -253,6 +254,36 @@ func (ife *IfExpression) String() string {
 		out.WriteString("else ")
 		out.WriteString(ife.FalseBlock.String())
 	}
+
+	return out.String()
+}
+
+type FunctionLiteral struct {
+	Token      tk.Token // the "fn" token
+	Parameters []*Identifier
+	Body       *BlockStatement
+}
+
+// Implements Expression
+func (fnl *FunctionLiteral) expressionNode() {}
+
+// Implements Node
+func (fnl *FunctionLiteral) TokenLiteral() string { return fnl.Token.Literal }
+
+// Implements Node
+func (fnl *FunctionLiteral) String() string {
+	var out bytes.Buffer
+
+	params := []string{}
+	for _, p := range fnl.Parameters {
+		params = append(params, p.String())
+	}
+
+	out.WriteString(fnl.TokenLiteral())
+	out.WriteString(tk.LPAREN)
+	out.WriteString(strings.Join(params, ", "))
+	out.WriteString(tk.RPAREN)
+	out.WriteString(fnl.Body.String())
 
 	return out.String()
 }

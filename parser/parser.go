@@ -68,6 +68,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(tk.FALSE, p.parseBoolean)
 	p.registerPrefix(tk.LPAREN, p.parseGroupedExpression)
 	p.registerPrefix(tk.IF, p.parseIfExpression)
+	p.registerPrefix(tk.FUNCTION, p.parseFunctionLiteral)
 	// infix functions
 	p.infixParseFns = make(map[tk.TokenType]infixParseFn)
 	p.registerInfix(tk.PLUS, p.parseInfixExpression)
@@ -370,4 +371,49 @@ func (p *Parser) parseIfExpression() ast.Expression {
 	}
 
 	return expr
+}
+
+func (p *Parser) parseFunctionParameters() []*ast.Identifier {
+	identifiers := []*ast.Identifier{}
+
+	if p.peekTokenIs(tk.RPAREN) {
+		p.nextToken()
+		return identifiers
+	}
+
+	p.nextToken()
+
+	ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+	identifiers = append(identifiers, ident)
+
+	for p.peekTokenIs(tk.COMMA) {
+		p.nextToken()
+		p.nextToken()
+		ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+		identifiers = append(identifiers, ident)
+	}
+
+	if !p.moveNextIfPeekTokenIs(tk.RPAREN) {
+		return nil
+	}
+
+	return identifiers
+}
+
+func (p *Parser) parseFunctionLiteral() ast.Expression {
+	fnl := &ast.FunctionLiteral{Token: p.curToken}
+
+	if !p.moveNextIfPeekTokenIs(tk.LPAREN) {
+		return nil
+	}
+
+	fnl.Parameters = p.parseFunctionParameters()
+
+	if !p.moveNextIfPeekTokenIs(tk.LBRACE) {
+		return nil
+	}
+
+	fnl.Body = p.parseBlockStatement()
+
+	return fnl
 }
