@@ -455,6 +455,10 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 		{"2 / (5 + 5)", "(2 / (5 + 5))"},
 		{"-(5 + 5)", "(-(5 + 5))"},
 		{"!(true == true)", "(!(true == true))"},
+		// adding call functions having highest precedence
+		{"a + add(b * c) + d", "((a + add((b * c))) + d)"},
+		{"add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))", "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))"},
+		{"add(a + b + c * d / f + g)", "add((((a + b) + ((c * d) / f)) + g))"},
 	}
 
 	for _, ii := range infixInputs {
@@ -690,4 +694,45 @@ func TestFunctionLiteral(t *testing.T) {
 	}
 
 	testInfixExpression(t, bodyStmt.Expression, "x", "+", "y")
+}
+
+// GOFLAGS="-count=1" go test -run TestCallExpression
+func TestCallExpression(t *testing.T) {
+	input := `add(1, 2 * 3, 4 + 5)`
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("Program statements expected %d, but got %d\n", 1, len(program.Statements))
+	}
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("stmt expected type is ast.ExpressionStatement, but got %T\n", program.Statements[0])
+	}
+
+	myCall, ok := stmt.Expression.(*ast.CallExpression)
+	if !ok {
+		t.Fatalf("statement expected type is ast.CallExpression, but got %T\n", stmt.Expression)
+	}
+
+	if !testIdentifier(t, myCall.Function, "add") {
+		return
+	}
+
+	if len(myCall.Arguments) != 3 {
+		t.Fatalf("My call arguments expected %d, but got %d\n", 3, len(myCall.Arguments))
+	}
+
+	if !testLiteralExpression(t, myCall.Arguments[0], 1) {
+		t.Fatal("call argument expected 1 but got ", myCall.Arguments[0])
+	}
+	if !testInfixExpression(t, myCall.Arguments[1], 2, "*", 3) {
+		t.Fatal("call argument expression expected 2 * 3 but got ", myCall.Arguments[1])
+	}
+	if !testInfixExpression(t, myCall.Arguments[2], 4, "+", 5) {
+		t.Fatal("call argument expression expected 4 + 5 but got ", myCall.Arguments[1])
+	}
 }

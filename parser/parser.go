@@ -9,7 +9,7 @@ import (
 	tk "github.com/seblkma/go-himeji/token" // naming conflicts with go/token
 )
 
-// For evaluation order - precedence
+// For evaluation order - precedence, the first LOWEST has lowest precedence, the last has the highest precedence
 const (
 	_ int = iota
 	LOWEST
@@ -18,7 +18,7 @@ const (
 	SUM           // +
 	PRODUCT       // *
 	PREFIX        // -X or !X
-	CALL          // myFunction(X)
+	CALL          // callFunction(X)
 )
 
 // Precedence table, e.g. multiplication has higher precedence than addition
@@ -31,6 +31,7 @@ var precedences = map[tk.TokenType]int{
 	tk.MINUS:    SUM,
 	tk.SLASH:    PRODUCT,
 	tk.ASTERISK: PRODUCT,
+	tk.LPAREN:   CALL,
 }
 
 // Function types for associating to each specific token type
@@ -69,6 +70,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(tk.LPAREN, p.parseGroupedExpression)
 	p.registerPrefix(tk.IF, p.parseIfExpression)
 	p.registerPrefix(tk.FUNCTION, p.parseFunctionLiteral)
+
 	// infix functions
 	p.infixParseFns = make(map[tk.TokenType]infixParseFn)
 	p.registerInfix(tk.PLUS, p.parseInfixExpression)
@@ -79,6 +81,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(tk.NOT_EQ, p.parseInfixExpression)
 	p.registerInfix(tk.LT, p.parseInfixExpression)
 	p.registerInfix(tk.GT, p.parseInfixExpression)
+	p.registerInfix(tk.LPAREN, p.parseCallExpression)
 
 	return p
 }
@@ -416,4 +419,34 @@ func (p *Parser) parseFunctionLiteral() ast.Expression {
 	fnl.Body = p.parseBlockStatement()
 
 	return fnl
+}
+
+func (p *Parser) parseCallArguments() []ast.Expression {
+	args := []ast.Expression{}
+
+	if p.peekTokenIs(tk.RPAREN) {
+		p.nextToken()
+		return args
+	}
+
+	p.nextToken()
+	args = append(args, p.parseExpression(LOWEST))
+
+	for p.peekTokenIs(tk.COMMA) {
+		p.nextToken()
+		p.nextToken()
+		args = append(args, p.parseExpression(LOWEST))
+	}
+
+	if !p.moveNextIfPeekTokenIs(tk.RPAREN) {
+		return nil
+	}
+
+	return args
+}
+
+func (p *Parser) parseCallExpression(callFunction ast.Expression) ast.Expression {
+	expr := &ast.CallExpression{Token: p.curToken, Function: callFunction}
+	expr.Arguments = p.parseCallArguments()
+	return expr
 }
