@@ -215,6 +215,39 @@ func TestLetStatementsError(t *testing.T) {
 	}
 }
 
+// GOFLAGS="-count=1" go test -run TestLetStatementsComplete
+func TestLetStatementsComplete(t *testing.T) {
+	lets := []struct {
+		input              string
+		expectedIdentifier string
+		expectedValue      interface{}
+	}{
+		{"let x = 5;", "x", 5},
+		{"let y = true;", "y", true},
+		{"let foobar = y;", "foobar", "y"},
+	}
+
+	for _, let := range lets {
+		l := lexer.New(let.input)
+		p := New(l)
+		program := p.ParseProgram()
+		checkParserErrors(t, p)
+
+		if len(program.Statements) != 1 {
+			t.Fatalf("Program statements expected %d, but got %d\n", 1, len(program.Statements))
+		}
+		stmt := program.Statements[0]
+		if !testLetStatement(t, stmt, let.expectedIdentifier) {
+			return
+		}
+		val := stmt.(*ast.LetStatement).Value
+		if !testLiteralExpression(t, val, let.expectedValue) {
+			return
+		}
+	}
+
+}
+
 // GOFLAGS="-count=1" go test -run TestReturnStatements
 func TestReturnStatements(t *testing.T) {
 	input := `
