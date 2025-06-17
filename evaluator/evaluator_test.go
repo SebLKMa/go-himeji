@@ -1,6 +1,7 @@
 package evaluator
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/seblkma/go-himeji/lexer"
@@ -37,6 +38,14 @@ func testBooleanObject(t *testing.T, obj object.Object, expected bool) bool {
 	}
 	if result.Value != expected {
 		t.Errorf("object has wrong value. got=%t, want=%t", result.Value, expected)
+		return false
+	}
+	return true
+}
+
+func testNullObject(t *testing.T, obj object.Object) bool {
+	if obj != NULL {
+		t.Errorf("object is not NULL. got=%T (%+v)", obj, obj)
 		return false
 	}
 	return true
@@ -141,5 +150,37 @@ func TestEvalInfixIntegerExpression(t *testing.T) {
 	for _, ti := range testInputs {
 		evaluated := testEval(ti.input)
 		testIntegerObject(t, evaluated, ti.expected)
+	}
+}
+
+// GOFLAGS="-count=1" go test -run TestIfElseExpression
+func TestIfElseExpression(t *testing.T) {
+	// The ! operator negates the operand
+	testInputs := []struct {
+		input    string
+		expected interface{}
+	}{
+		{"if (true) { 10 }", 10},
+		{"if (false) { 10 }", nil},
+		{"if (1) { 10 }", 10},
+		{"if (1 < 2) { 10 }", 10},
+		{"if (1 > 2) { 10 }", nil},
+		{"if (1 > 2) { 10 } else { 20 }", 20},
+		{"if (1 < 2) { 10 } else { 20 }", 10},
+	}
+
+	for _, ti := range testInputs {
+		evaluated := testEval(ti.input)
+		expectedInt, ok := ti.expected.(int)
+		fmt.Println(ti)
+		if ok {
+			if !testIntegerObject(t, evaluated, int64(expectedInt)) {
+				break
+			}
+		} else {
+			if !testNullObject(t, evaluated) {
+				break
+			}
+		}
 	}
 }
