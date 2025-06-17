@@ -50,6 +50,8 @@ func TestEvalIntegerExpression(t *testing.T) {
 	}{
 		{"3", 3},
 		{"42", 42},
+		{"-12", -12},
+		{"-42", -42},
 	}
 
 	for _, ti := range testInputs {
@@ -66,6 +68,27 @@ func TestEvalBooleanExpression(t *testing.T) {
 	}{
 		{"true", true},
 		{"false", false},
+	}
+
+	for _, ti := range testInputs {
+		evaluated := testEval(ti.input)
+		testBooleanObject(t, evaluated, ti.expected)
+	}
+}
+
+// GOFLAGS="-count=1" go test -run TestBangOperator
+func TestBangOperator(t *testing.T) {
+	// The ! operator negates the operand
+	testInputs := []struct {
+		input    string
+		expected bool
+	}{
+		{"!true", false},
+		{"!false", true},
+		{"!42", false},
+		{"!!true", true},   // negates true to false then negates false to true
+		{"!!false", false}, // vice-versa above
+		{"!!42", true},
 	}
 
 	for _, ti := range testInputs {

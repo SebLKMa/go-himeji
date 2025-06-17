@@ -26,6 +26,9 @@ func Eval(n ast.Node) object.Object {
 	case *ast.Boolean:
 		// No need to allocate new Boolean objects since they represent the same TRUE or FALSE values
 		return toBooleanObjectInstance(node.Value)
+	case *ast.PrefixExpression:
+		rhs := Eval(node.Right)
+		return evalPrefixExpression(node.Operator, rhs)
 	}
 
 	return nil
@@ -46,4 +49,38 @@ func toBooleanObjectInstance(value bool) *object.Boolean {
 		return TRUE
 	}
 	return FALSE
+}
+
+func evalBangOperatorExpression(rhs object.Object) object.Object {
+	switch rhs {
+	case TRUE:
+		return FALSE
+	case FALSE:
+		return TRUE
+	case NULL:
+		return TRUE
+	default:
+		return FALSE
+	}
+}
+
+func evalMinusPrefixOperatorExpression(rhs object.Object) object.Object {
+	if rhs.Type() != object.INTEGER_OBJ {
+		return NULL
+	}
+
+	// Returns the minus value
+	value := rhs.(*object.Integer).Value
+	return &object.Integer{Value: -value}
+}
+
+func evalPrefixExpression(op string, rhs object.Object) object.Object {
+	switch op {
+	case "!":
+		return evalBangOperatorExpression(rhs)
+	case "-":
+		return evalMinusPrefixOperatorExpression(rhs)
+	default:
+		return NULL
+	}
 }
