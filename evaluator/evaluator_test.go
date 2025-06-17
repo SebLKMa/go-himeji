@@ -68,6 +68,24 @@ func TestEvalBooleanExpression(t *testing.T) {
 	}{
 		{"true", true},
 		{"false", false},
+		{"1 < 2", true},
+		{"1 > 2", false},
+		{"1 < 1", false},
+		{"1 > 1", false},
+		{"1 == 1", true},
+		{"1 != 1", false},
+		{"1 == 2", false},
+		{"1 != 2", true},
+		//{"42 >= 0", true}, // InfixExpression does not handle <= or >= yet
+		{"true == true", true},
+		{"false == false", true},
+		{"true == false", false},
+		{"true != false", true},
+		{"false != true", true},
+		{"(1 < 2) == true", true},
+		{"(1 < 2) == false", false},
+		{"(1 > 2) == true", false},
+		{"(1 > 2) == false", true},
 	}
 
 	for _, ti := range testInputs {

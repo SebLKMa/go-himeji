@@ -92,7 +92,14 @@ func evalPrefixExpression(op string, rhs object.Object) object.Object {
 func evalInfixExpression(op string, lhs, rhs object.Object) object.Object {
 	switch {
 	case lhs.Type() == object.INTEGER_OBJ && rhs.Type() == object.INTEGER_OBJ:
+		// Both operands are Integer objects
 		return evalInfixIntegerExpression(op, lhs, rhs)
+	case op == "==":
+		// Reaching here means lhs and rhs are pointers to the Boolean singleton instance(s)
+		return toBooleanObjectInstance(lhs == rhs)
+	case op == "!=":
+		// Reaching here means lhs and rhs are pointers to the Boolean singleton instance(s)
+		return toBooleanObjectInstance(lhs != rhs)
 	default:
 		return NULL
 	}
@@ -111,6 +118,16 @@ func evalInfixIntegerExpression(op string, lhs, rhs object.Object) object.Object
 		return &object.Integer{Value: leftValue * rightValue}
 	case "/":
 		return &object.Integer{Value: leftValue / rightValue}
+	case "<":
+		return toBooleanObjectInstance(leftValue < rightValue)
+	case ">":
+		return toBooleanObjectInstance(leftValue > rightValue)
+	case "==":
+		return toBooleanObjectInstance(leftValue == rightValue)
+	case "!=":
+		return toBooleanObjectInstance(leftValue != rightValue)
+	case ">=":
+		return toBooleanObjectInstance(leftValue >= rightValue)
 	default:
 		return NULL
 	}

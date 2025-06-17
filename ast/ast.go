@@ -170,7 +170,7 @@ func (pe PrefixExpression) String() string {
 }
 
 type InfixExpression struct {
-	Token    tk.Token // operator e.g. +, -, *, / , ==, !=
+	Token    tk.Token // operator e.g. +, -, *, / , ==, !=, does not handle <= or >= yet
 	Left     Expression
 	Operator string
 	Right    Expression

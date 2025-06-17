@@ -11,6 +11,7 @@ const (
 )
 
 // The Object interface represents the internal representation of a value, e.g. integer, boolean, etc.
+// Almost like "boxing" in C#
 type Object interface {
 	Type() ObjectType
 	Inspect() string
