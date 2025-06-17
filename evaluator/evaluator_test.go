@@ -184,3 +184,34 @@ func TestIfElseExpression(t *testing.T) {
 		}
 	}
 }
+
+// GOFLAGS="-count=1" go test -run TestReturnStatements
+func TestReturnStatements(t *testing.T) {
+	testInputs := []struct {
+		input    string
+		expected int64
+	}{
+		{"return 42;", 42},
+		{"return 42; 9;", 42},
+		{"return 2 * 21; 9;", 42},
+		{"865; return 21 * 2; 911;", 42},
+		// a nested if, expected to return 10
+		{
+			`
+			if (10 > 1) {
+			  if (10 > 1) {
+			    return 10;
+			  }
+			  129
+			  return 1;
+			}
+			`,
+			10,
+		},
+	}
+
+	for _, ti := range testInputs {
+		evaluated := testEval(ti.input)
+		testIntegerObject(t, evaluated, ti.expected)
+	}
+}

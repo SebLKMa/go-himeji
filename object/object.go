@@ -5,9 +5,10 @@ import "fmt"
 type ObjectType string
 
 const (
-	NULL_OBJ    = "NULL"
-	INTEGER_OBJ = "INTEGER"
-	BOOLEAN_OBJ = "BOOLEAN"
+	NULL_OBJ         = "NULL"
+	INTEGER_OBJ      = "INTEGER"
+	BOOLEAN_OBJ      = "BOOLEAN"
+	RETURN_VALUE_OBJ = "RETURN_VALUE"
 )
 
 // The Object interface represents the internal representation of a value, e.g. integer, boolean, etc.
@@ -47,3 +48,14 @@ func (b *Boolean) Type() ObjectType { return BOOLEAN_OBJ }
 
 // Implements the Object interface
 func (b *Boolean) Inspect() string { return fmt.Sprintf("%t", b.Value) }
+
+// A wrapper for boolean with bool value
+type ReturnValue struct {
+	Value Object
+}
+
+// Implements the Object interface
+func (rv *ReturnValue) Type() ObjectType { return RETURN_VALUE_OBJ }
+
+// Implements the Object interface
+func (rv *ReturnValue) Inspect() string { return rv.Value.Inspect() }
