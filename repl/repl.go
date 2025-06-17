@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/seblkma/go-himeji/evaluator"
 	"github.com/seblkma/go-himeji/lexer"
 	"github.com/seblkma/go-himeji/parser"
 	// naming conflicts with go/token
@@ -38,9 +39,18 @@ func Start(in io.Reader, out io.Writer) {
 			continue
 		}
 
-		io.WriteString(out, program.String())
-		io.WriteString(out, "\n")
+		// Version 2 - read eval print loop
+		evaluated := evaluator.Eval(program)
+		if evaluated != nil {
+			io.WriteString(out, evaluated.Inspect())
+			io.WriteString(out, "\n")
+		}
 
+		// Version 1 - read parse print loop
+		//io.WriteString(out, program.String())
+		//io.WriteString(out, "\n")
+
+		// Version 0 - just a print loop
 		//for tok := l.NextToken(); tok.Type != tk.EOF; tok = l.NextToken() {
 		//	fmt.Printf("%+v\n", tok)
 		//}

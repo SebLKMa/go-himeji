@@ -2,7 +2,9 @@ module github.com/seblkma/go-himeji/repl
 
 replace (
 	github.com/seblkma/go-himeji/ast => ../ast
+	github.com/seblkma/go-himeji/evaluator => ../evaluator
 	github.com/seblkma/go-himeji/lexer => ../lexer
+	github.com/seblkma/go-himeji/object => ../object
 	github.com/seblkma/go-himeji/parser => ../parser
 	github.com/seblkma/go-himeji/token => ../token
 )
