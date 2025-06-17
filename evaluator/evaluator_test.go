@@ -8,22 +8,6 @@ import (
 	hparser "github.com/seblkma/go-himeji/parser"
 )
 
-// GOFLAGS="-count=1" go test -run TestEvalIntegerExpression
-func TestEvalIntegerExpression(t *testing.T) {
-	testInputs := []struct {
-		input    string
-		expected int64
-	}{
-		{"3", 3},
-		{"42", 42},
-	}
-
-	for _, ti := range testInputs {
-		evaluated := testEval(ti.input)
-		testIntegerObject(t, evaluated, ti.expected)
-	}
-}
-
 func testEval(input string) object.Object {
 	l := lexer.New(input)
 	p := hparser.New(l)
@@ -43,4 +27,49 @@ func testIntegerObject(t *testing.T, obj object.Object, expected int64) bool {
 		return false
 	}
 	return true
+}
+
+func testBooleanObject(t *testing.T, obj object.Object, expected bool) bool {
+	result, ok := obj.(*object.Boolean)
+	if !ok {
+		t.Errorf("object is not Boolean. got=%T (%+v)", obj, obj)
+		return false
+	}
+	if result.Value != expected {
+		t.Errorf("object has wrong value. got=%t, want=%t", result.Value, expected)
+		return false
+	}
+	return true
+}
+
+// GOFLAGS="-count=1" go test -run TestEvalIntegerExpression
+func TestEvalIntegerExpression(t *testing.T) {
+	testInputs := []struct {
+		input    string
+		expected int64
+	}{
+		{"3", 3},
+		{"42", 42},
+	}
+
+	for _, ti := range testInputs {
+		evaluated := testEval(ti.input)
+		testIntegerObject(t, evaluated, ti.expected)
+	}
+}
+
+// GOFLAGS="-count=1" go test -run TestEvalBooleanExpression
+func TestEvalBooleanExpression(t *testing.T) {
+	testInputs := []struct {
+		input    string
+		expected bool
+	}{
+		{"true", true},
+		{"false", false},
+	}
+
+	for _, ti := range testInputs {
+		evaluated := testEval(ti.input)
+		testBooleanObject(t, evaluated, ti.expected)
+	}
 }
