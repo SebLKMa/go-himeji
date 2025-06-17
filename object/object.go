@@ -1,0 +1,48 @@
+package object
+
+import "fmt"
+
+type ObjectType string
+
+const (
+	NULL_OBJ    = "NULL"
+	INTEGER_OBJ = "INTEGER"
+	BOOLEAN_OBJ = "BOOLEAN"
+)
+
+// The Object interface represents the internal representation of a value, e.g. integer, boolean, etc.
+type Object interface {
+	Type() ObjectType
+	Inspect() string
+}
+
+// A wrapper for null, no value
+type Null struct{}
+
+// Implements the Object interface
+func (n *Null) Type() ObjectType { return NULL_OBJ }
+
+// Implements the Object interface
+func (n *Null) Inspect() string { return "null" }
+
+// A wrapper for integer with int64 value
+type Integer struct {
+	Value int64
+}
+
+// Implements the Object interface
+func (i *Integer) Type() ObjectType { return INTEGER_OBJ }
+
+// Implements the Object interface
+func (i *Integer) Inspect() string { return fmt.Sprintf("%d", i.Value) }
+
+// A wrapper for boolean with bool value
+type Boolean struct {
+	Value bool
+}
+
+// Implements the Object interface
+func (b *Boolean) Type() ObjectType { return BOOLEAN_OBJ }
+
+// Implements the Object interface
+func (b *Boolean) Inspect() string { return fmt.Sprintf("%t", b.Value) }
