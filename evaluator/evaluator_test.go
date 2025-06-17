@@ -96,3 +96,32 @@ func TestBangOperator(t *testing.T) {
 		testBooleanObject(t, evaluated, ti.expected)
 	}
 }
+
+// GOFLAGS="-count=1" go test -run TestEvalInfixIntegerExpression
+func TestEvalInfixIntegerExpression(t *testing.T) {
+	testInputs := []struct {
+		input    string
+		expected int64
+	}{
+		{"3", 3},
+		{"42", 42},
+		{"-12", -12},
+		{"-42", -42},
+		{"5 + 5 + 5 + 5 - 10", 10},
+		{"2 * 2 * 2 * 2 * 2", 32},
+		{"-50 + 100 + -50", 0},
+		{"5 * 2 + 10", 20},
+		{"5 + 2 * 10", 25},
+		{"20 + 2 * -10", 0},
+		{"50 / 2 * 2 + 10", 60},
+		{"2 * (5 + 10)", 30},
+		{"3 * 3 * 3 + 10", 37},
+		{"3 * (3 * 3) + 10", 37},
+		{"(5 + 10 * 2 + 15 / 3) * 2 + -10", 50},
+	}
+
+	for _, ti := range testInputs {
+		evaluated := testEval(ti.input)
+		testIntegerObject(t, evaluated, ti.expected)
+	}
+}
