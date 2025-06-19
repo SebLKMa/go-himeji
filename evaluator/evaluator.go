@@ -1,6 +1,8 @@
 package evaluator
 
 import (
+	"fmt"
+
 	"github.com/seblkma/go-himeji/ast"
 	"github.com/seblkma/go-himeji/object"
 	//hparser "github.com/seblkma/go-himeji/parser"
@@ -29,10 +31,19 @@ func Eval(n ast.Node) object.Object {
 		return toBooleanObjectInstance(node.Value)
 	case *ast.PrefixExpression:
 		rhs := Eval(node.Right)
+		if isError(rhs) {
+			return rhs
+		}
 		return evalPrefixExpression(node.Operator, rhs)
 	case *ast.InfixExpression:
 		lhs := Eval(node.Left)
+		if isError(lhs) {
+			return lhs
+		}
 		rhs := Eval(node.Right)
+		if isError(rhs) {
+			return rhs
+		}
 		return evalInfixExpression(node.Operator, lhs, rhs)
 	case *ast.BlockStatement:
 		//return evalStatements(node.Statements)
@@ -41,6 +52,9 @@ func Eval(n ast.Node) object.Object {
 		return evalIfExpression(node)
 	case *ast.ReturnStatement:
 		valExpr := Eval(node.Value)
+		if isError(valExpr) {
+			return valExpr
+		}
 		return &object.ReturnValue{Value: valExpr}
 
 	}
@@ -52,8 +66,14 @@ func evalProgram(program *ast.Program) object.Object {
 	var result object.Object
 	for _, statement := range program.Statements {
 		result = Eval(statement)
-		if returnValue, ok := result.(*object.ReturnValue); ok {
-			return returnValue.Value
+		//if returnValue, ok := result.(*object.ReturnValue); ok {
+		//	return returnValue.Value
+		//}
+		switch result := result.(type) {
+		case *object.ReturnValue:
+			return result.Value
+		case *object.Error:
+			return result
 		}
 	}
 	return result
@@ -65,8 +85,11 @@ func evalBlockStatement(block *ast.BlockStatement) object.Object {
 	for _, stmt := range block.Statements {
 		result = Eval(stmt)
 
-		if result != nil && result.Type() == object.RETURN_VALUE_OBJ {
-			return result
+		if result != nil {
+			rt := result.Type()
+			if rt == object.RETURN_VALUE_OBJ || rt == object.ERROR_OBJ {
+				return result
+			}
 		}
 	}
 
@@ -109,7 +132,7 @@ func evalBangOperatorExpression(rhs object.Object) object.Object {
 
 func evalMinusPrefixOperatorExpression(rhs object.Object) object.Object {
 	if rhs.Type() != object.INTEGER_OBJ {
-		return NULL
+		return newError("unknown operator: -%s", rhs.Type())
 	}
 
 	// Returns the minus value
@@ -124,7 +147,7 @@ func evalPrefixExpression(op string, rhs object.Object) object.Object {
 	case "-":
 		return evalMinusPrefixOperatorExpression(rhs)
 	default:
-		return NULL
+		return newError("unknown operator: %s%s", op, rhs.Type())
 	}
 }
 
@@ -139,8 +162,10 @@ func evalInfixExpression(op string, lhs, rhs object.Object) object.Object {
 	case op == "!=":
 		// Reaching here means lhs and rhs are pointers to the Boolean singleton instance(s)
 		return toBooleanObjectInstance(lhs != rhs)
+	case lhs.Type() != rhs.Type():
+		return newError("type mismatch: %s %s %s", lhs.Type(), op, rhs.Type())
 	default:
-		return NULL
+		return newError("unknown operator: %s %s %s", lhs.Type(), op, rhs.Type())
 	}
 }
 
@@ -168,7 +193,7 @@ func evalInfixIntegerExpression(op string, lhs, rhs object.Object) object.Object
 	case ">=":
 		return toBooleanObjectInstance(leftValue >= rightValue)
 	default:
-		return NULL
+		return newError("unknown operator: %s %s %s", lhs.Type(), op, rhs.Type())
 	}
 }
 
@@ -187,6 +212,10 @@ func isTruthy(obj object.Object) bool {
 
 func evalIfExpression(ie *ast.IfExpression) object.Object {
 	condition := Eval(ie.Condition)
+	if isError(condition) {
+		return condition
+	}
+
 	if isTruthy(condition) {
 		return Eval(ie.TrueBlock)
 	} else if ie.FalseBlock != nil {
@@ -194,4 +223,15 @@ func evalIfExpression(ie *ast.IfExpression) object.Object {
 	} else {
 		return NULL
 	}
+}
+
+func newError(format string, a ...interface{}) *object.Error {
+	return &object.Error{Message: fmt.Sprintf(format, a...)}
+}
+
+func isError(obj object.Object) bool {
+	if obj != nil {
+		return obj.Type() == object.ERROR_OBJ
+	}
+	return false
 }
