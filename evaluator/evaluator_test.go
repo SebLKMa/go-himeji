@@ -294,3 +294,64 @@ func TestLetStatements(t *testing.T) {
 		testIntegerObject(t, evaluated, ti.expected)
 	}
 }
+
+// GOFLAGS="-count=1" go test -run TestFunctionObject
+func TestFunctionObject(t *testing.T) {
+	testBody := "{ x + 2; };"
+	testInput := "fn(x) " + testBody
+	expectedBody := "(x + 2)"
+
+	evaluated := testEval(testInput)
+	fn, ok := evaluated.(*object.Function)
+	if !ok {
+		t.Fatalf("object is not Function. got=%T (%+v)", evaluated, evaluated)
+	}
+	if len(fn.Parameters) != 1 {
+		t.Fatalf("function has wrong parameters. Parameters=%+v", fn.Parameters)
+	}
+	if fn.Parameters[0].String() != "x" {
+		t.Fatalf("parameter is not 'x'. got=%q", fn.Parameters[0])
+	}
+	if fn.Body.String() != expectedBody {
+		t.Fatalf("body is not %q. got=%q", expectedBody, fn.Body.String())
+	}
+}
+
+// GOFLAGS="-count=1" go test -run TestFunctionApplication
+func TestFunctionApplication(t *testing.T) {
+	testInputs := []struct {
+		input    string
+		expected int64
+	}{
+		{"let identityFn = fn(x) { x; }; identityFn(5);", 5},
+		{"let identityFn = fn(x) { return x; }; identityFn(5);", 5},
+		{"let doubleFn = fn(x) { x * 2; }; doubleFn(5);", 10},
+		{"let addFn = fn(x, y) { x + y; }; addFn(20, 22);", 42},
+		{"let addFn = fn(x, y) { x + y; }; addFn(10 + 10, addFn(20, 2));", 42}, // need to pass 20, 22 to outer addFn
+		{"fn(x) { x; }(42)", 42},
+	}
+
+	for _, ti := range testInputs {
+		evaluated := testEval(ti.input)
+		testIntegerObject(t, evaluated, ti.expected)
+	}
+}
+
+// GOFLAGS="-count=1" go test -run TestClosures
+func TestClosures(t *testing.T) {
+	testInput := `
+	let addxy = fn(x) {
+		fn(y) {
+			x + y;
+		}
+	}
+
+	let addThem = addxy(22);
+	addThem(20)
+	`
+
+	// Closures are functions that “close over” the environment they were defined in.
+	// They carry their own environment around and whenever they’re called they can access it.
+
+	testIntegerObject(t, testEval(testInput), 42)
+}

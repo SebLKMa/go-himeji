@@ -1,6 +1,12 @@
 package object
 
-import "fmt"
+import (
+	"bytes"
+	"fmt"
+	"strings"
+
+	"github.com/seblkma/go-himeji/ast"
+)
 
 type ObjectType string
 
@@ -10,6 +16,7 @@ const (
 	BOOLEAN_OBJ      = "BOOLEAN"
 	RETURN_VALUE_OBJ = "RETURN_VALUE"
 	ERROR_OBJ        = "ERROR"
+	FUNCTION_OBJ     = "FUNCTION"
 )
 
 // The Object interface represents the internal representation of a value, e.g. integer, boolean, etc.
@@ -73,19 +80,69 @@ func (e *Error) Inspect() string { return "ERROR: " + e.Message }
 // The Environment keeps track of objects bindings
 type Environment struct {
 	store map[string]Object
+	outer *Environment
 }
 
 func NewEnvironment() *Environment {
 	s := make(map[string]Object)
-	return &Environment{store: s}
+	return &Environment{store: s, outer: nil}
+}
+
+// NewInnerEnvironment creates an inner Environment with a reference to its outer Environment
+func NewInnerEnvironment(outer *Environment) *Environment {
+	env := NewEnvironment()
+	env.outer = outer
+	return env
 }
 
 func (e *Environment) Get(name string) (Object, bool) {
 	obj, found := e.store[name]
+	// Mirrors variable scopes
+	/*
+		{
+			a = 22
+			{
+				b = 20
+				{
+					c = a + b
+				}
+			}
+		}
+	*/
+	if !found && e.outer != nil {
+		obj, found = e.outer.Get(name)
+	}
 	return obj, found
 }
 
 func (e *Environment) Set(name string, obj Object) Object {
 	e.store[name] = obj
 	return obj
+}
+
+type Function struct {
+	Parameters []*ast.Identifier
+	Body       *ast.BlockStatement
+	Env        *Environment
+}
+
+// Implements Object interface
+func (f *Function) Type() ObjectType { return FUNCTION_OBJ }
+
+func (f *Function) Inspect() string {
+	var out bytes.Buffer
+
+	params := []string{}
+	for _, p := range f.Parameters {
+		params = append(params, p.String())
+	}
+
+	out.WriteString("fn")
+	out.WriteString("(")
+	out.WriteString(strings.Join(params, ","))
+	out.WriteString(") {\n")
+	out.WriteString(f.Body.String())
+	out.WriteString("\n}")
+
+	return out.String()
 }
