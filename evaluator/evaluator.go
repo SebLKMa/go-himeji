@@ -16,13 +16,13 @@ var (
 )
 
 // Eval evaluates an AST node to our value Object representation
-func Eval(n ast.Node) object.Object {
+func Eval(n ast.Node, env *object.Environment) object.Object {
 	switch node := n.(type) {
 	case *ast.Program:
 		//return evalStatements(node.Statements)
-		return evalProgram(node)
+		return evalProgram(node, env)
 	case *ast.ExpressionStatement:
-		return Eval(node.Expression)
+		return Eval(node.Expression, env)
 	case *ast.IntegerLiteral:
 		// Allocates new Integer values
 		return &object.Integer{Value: node.Value}
@@ -30,42 +30,49 @@ func Eval(n ast.Node) object.Object {
 		// No need to allocate new Boolean objects since they represent the same TRUE or FALSE values
 		return toBooleanObjectInstance(node.Value)
 	case *ast.PrefixExpression:
-		rhs := Eval(node.Right)
+		rhs := Eval(node.Right, env)
 		if isError(rhs) {
 			return rhs
 		}
 		return evalPrefixExpression(node.Operator, rhs)
 	case *ast.InfixExpression:
-		lhs := Eval(node.Left)
+		lhs := Eval(node.Left, env)
 		if isError(lhs) {
 			return lhs
 		}
-		rhs := Eval(node.Right)
+		rhs := Eval(node.Right, env)
 		if isError(rhs) {
 			return rhs
 		}
 		return evalInfixExpression(node.Operator, lhs, rhs)
 	case *ast.BlockStatement:
 		//return evalStatements(node.Statements)
-		return evalBlockStatement(node)
+		return evalBlockStatement(node, env)
 	case *ast.IfExpression:
-		return evalIfExpression(node)
+		return evalIfExpression(node, env)
 	case *ast.ReturnStatement:
-		valExpr := Eval(node.Value)
+		valExpr := Eval(node.Value, env)
 		if isError(valExpr) {
 			return valExpr
 		}
 		return &object.ReturnValue{Value: valExpr}
-
+	case *ast.Identifier:
+		return evalIdentifier(node, env)
+	case *ast.LetStatement:
+		valExpr := Eval(node.Value, env)
+		if isError(valExpr) {
+			return valExpr
+		}
+		env.Set(node.Name.Value, valExpr)
 	}
 
 	return nil
 }
 
-func evalProgram(program *ast.Program) object.Object {
+func evalProgram(program *ast.Program, env *object.Environment) object.Object {
 	var result object.Object
 	for _, statement := range program.Statements {
-		result = Eval(statement)
+		result = Eval(statement, env)
 		//if returnValue, ok := result.(*object.ReturnValue); ok {
 		//	return returnValue.Value
 		//}
@@ -79,11 +86,11 @@ func evalProgram(program *ast.Program) object.Object {
 	return result
 }
 
-func evalBlockStatement(block *ast.BlockStatement) object.Object {
+func evalBlockStatement(block *ast.BlockStatement, env *object.Environment) object.Object {
 	var result object.Object
 
 	for _, stmt := range block.Statements {
-		result = Eval(stmt)
+		result = Eval(stmt, env)
 
 		if result != nil {
 			rt := result.Type()
@@ -96,11 +103,11 @@ func evalBlockStatement(block *ast.BlockStatement) object.Object {
 	return result
 }
 
-func evalStatements(stmts []ast.Statement) object.Object {
+func evalStatements(stmts []ast.Statement, env *object.Environment) object.Object {
 	var result object.Object
 
 	for _, stmt := range stmts {
-		result = Eval(stmt)
+		result = Eval(stmt, env)
 
 		if returnValue, ok := result.(*object.ReturnValue); ok {
 			return returnValue.Value
@@ -196,6 +203,13 @@ func evalInfixIntegerExpression(op string, lhs, rhs object.Object) object.Object
 		return newError("unknown operator: %s %s %s", lhs.Type(), op, rhs.Type())
 	}
 }
+func evalIdentifier(node *ast.Identifier, env *object.Environment) object.Object {
+	obj, found := env.Get(node.Value)
+	if !found {
+		return newError("identifier not found: " + node.Value)
+	}
+	return obj
+}
 
 func isTruthy(obj object.Object) bool {
 	switch obj {
@@ -210,16 +224,16 @@ func isTruthy(obj object.Object) bool {
 	}
 }
 
-func evalIfExpression(ie *ast.IfExpression) object.Object {
-	condition := Eval(ie.Condition)
+func evalIfExpression(ie *ast.IfExpression, env *object.Environment) object.Object {
+	condition := Eval(ie.Condition, env)
 	if isError(condition) {
 		return condition
 	}
 
 	if isTruthy(condition) {
-		return Eval(ie.TrueBlock)
+		return Eval(ie.TrueBlock, env)
 	} else if ie.FalseBlock != nil {
-		return Eval(ie.FalseBlock)
+		return Eval(ie.FalseBlock, env)
 	} else {
 		return NULL
 	}

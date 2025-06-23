@@ -69,3 +69,23 @@ type Error struct {
 func (e *Error) Type() ObjectType { return ERROR_OBJ }
 
 func (e *Error) Inspect() string { return "ERROR: " + e.Message }
+
+// The Environment keeps track of objects bindings
+type Environment struct {
+	store map[string]Object
+}
+
+func NewEnvironment() *Environment {
+	s := make(map[string]Object)
+	return &Environment{store: s}
+}
+
+func (e *Environment) Get(name string) (Object, bool) {
+	obj, found := e.store[name]
+	return obj, found
+}
+
+func (e *Environment) Set(name string, obj Object) Object {
+	e.store[name] = obj
+	return obj
+}

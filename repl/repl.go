@@ -7,6 +7,7 @@ import (
 
 	"github.com/seblkma/go-himeji/evaluator"
 	"github.com/seblkma/go-himeji/lexer"
+	"github.com/seblkma/go-himeji/object"
 	"github.com/seblkma/go-himeji/parser"
 	// naming conflicts with go/token
 )
@@ -21,6 +22,7 @@ func printParserErrors(out io.Writer, errors []string) {
 
 func Start(in io.Reader, out io.Writer) {
 	scanner := bufio.NewScanner(in)
+	env := object.NewEnvironment()
 
 	for {
 		fmt.Print(PROMPT)
@@ -40,7 +42,7 @@ func Start(in io.Reader, out io.Writer) {
 		}
 
 		// Version 2 - read eval print loop
-		evaluated := evaluator.Eval(program)
+		evaluated := evaluator.Eval(program, env)
 		if evaluated != nil {
 			io.WriteString(out, evaluated.Inspect())
 			io.WriteString(out, "\n")
