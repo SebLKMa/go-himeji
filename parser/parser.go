@@ -70,6 +70,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(tk.LPAREN, p.parseGroupedExpression)
 	p.registerPrefix(tk.IF, p.parseIfExpression)
 	p.registerPrefix(tk.FUNCTION, p.parseFunctionLiteral)
+	p.registerPrefix(tk.STRING, p.parseStringLiteral)
 
 	// infix functions
 	p.infixParseFns = make(map[tk.TokenType]infixParseFn)
@@ -463,4 +464,12 @@ func (p *Parser) parseCallExpression(callFunction ast.Expression) ast.Expression
 	expr := &ast.CallExpression{Token: p.curToken, Function: callFunction}
 	expr.Arguments = p.parseCallArguments()
 	return expr
+}
+
+func (p *Parser) parseStringLiteral() ast.Expression {
+	defer untrace(trace("parseStringLiteral"))
+	lit := &ast.StringLiteral{Token: p.curToken, Value: p.curToken.Literal}
+
+	// Do not move to next token.
+	return lit
 }

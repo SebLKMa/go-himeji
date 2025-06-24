@@ -769,3 +769,30 @@ func TestCallExpression(t *testing.T) {
 		t.Fatal("call argument expression expected 4 + 5 but got ", myCall.Arguments[1])
 	}
 }
+
+// GOFLAGS="-count=1" go test -run TestStringLiteralExpression
+func TestStringLiteralExpression(t *testing.T) {
+	input := `"guten tag!";`
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("Program statements expected %d, but got %d\n", 1, len(program.Statements))
+	}
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("stmt expected type is ast.ExpressionStatement, but got %T\n", program.Statements[0])
+	}
+
+	literal, ok := stmt.Expression.(*ast.StringLiteral)
+	if !ok {
+		t.Fatalf("statement expected type is ast.StringLiteral, but got %T\n", stmt.Expression)
+	}
+
+	if literal.Value != "guten tag!" {
+		t.Errorf("identifier expected value is guten tag!, but got %d\n", &literal.Value)
+	}
+}
