@@ -8,7 +8,7 @@ import (
 	"github.com/seblkma/go-himeji/repl"
 )
 
-const PROGLANG = "himeji"
+const PROGLANG = "Himeji"
 
 func main() {
 	user, err := user.Current()

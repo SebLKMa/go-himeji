@@ -355,3 +355,17 @@ func TestClosures(t *testing.T) {
 
 	testIntegerObject(t, testEval(testInput), 42)
 }
+
+// GOFLAGS="-count=1" go test -run TestStringLiteral
+func TestStringLiteral(t *testing.T) {
+	testInput := `"guten tag!"`
+
+	evaluated := testEval(testInput)
+	str, ok := evaluated.(*object.String)
+	if !ok {
+		t.Fatalf("object is not String. got=%T (%+v)", evaluated, evaluated)
+	}
+	if str.Value != "guten tag!" {
+		t.Errorf("String has wrong value. got=%q", str.Value)
+	}
+}

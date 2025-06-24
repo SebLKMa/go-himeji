@@ -26,6 +26,8 @@ func Eval(n ast.Node, env *object.Environment) object.Object {
 	case *ast.IntegerLiteral:
 		// Allocates new Integer values
 		return &object.Integer{Value: node.Value}
+	case *ast.StringLiteral:
+		return &object.String{Value: node.Value}
 	case *ast.Boolean:
 		// No need to allocate new Boolean objects since they represent the same TRUE or FALSE values
 		return toBooleanObjectInstance(node.Value)

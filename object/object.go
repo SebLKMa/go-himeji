@@ -17,6 +17,7 @@ const (
 	RETURN_VALUE_OBJ = "RETURN_VALUE"
 	ERROR_OBJ        = "ERROR"
 	FUNCTION_OBJ     = "FUNCTION"
+	STRING_OBJ       = "STRING"
 )
 
 // The Object interface represents the internal representation of a value, e.g. integer, boolean, etc.
@@ -146,3 +147,14 @@ func (f *Function) Inspect() string {
 
 	return out.String()
 }
+
+// A wrapper for integer with string value
+type String struct {
+	Value string
+}
+
+// Implements the Object interface
+func (s *String) Type() ObjectType { return STRING_OBJ }
+
+// Implements the Object interface
+func (s *String) Inspect() string { return s.Value }
