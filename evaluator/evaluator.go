@@ -180,6 +180,9 @@ func evalInfixExpression(op string, lhs, rhs object.Object) object.Object {
 	case lhs.Type() == object.INTEGER_OBJ && rhs.Type() == object.INTEGER_OBJ:
 		// Both operands are Integer objects
 		return evalInfixIntegerExpression(op, lhs, rhs)
+	case lhs.Type() == object.STRING_OBJ && rhs.Type() == object.STRING_OBJ:
+		// Both operands are String objects
+		return evalInfixStringExpression(op, lhs, rhs)
 	case op == "==":
 		// Reaching here means lhs and rhs are pointers to the Boolean singleton instance(s)
 		return toBooleanObjectInstance(lhs == rhs)
@@ -220,6 +223,19 @@ func evalInfixIntegerExpression(op string, lhs, rhs object.Object) object.Object
 		return newError("unknown operator: %s %s %s", lhs.Type(), op, rhs.Type())
 	}
 }
+
+func evalInfixStringExpression(op string, lhs, rhs object.Object) object.Object {
+	leftValue := lhs.(*object.String).Value
+	rightValue := rhs.(*object.String).Value
+
+	switch op {
+	case "+":
+		return &object.String{Value: leftValue + rightValue}
+	default:
+		return newError("unknown operator: %s %s %s", lhs.Type(), op, rhs.Type())
+	}
+}
+
 func evalIdentifier(node *ast.Identifier, env *object.Environment) object.Object {
 	obj, found := env.Get(node.Value)
 	if !found {
