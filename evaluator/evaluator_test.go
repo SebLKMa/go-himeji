@@ -387,3 +387,36 @@ func TestStringConcatenation(t *testing.T) {
 		t.Errorf("String has wrong value. got=%q", str.Value)
 	}
 }
+
+// GOFLAGS="-count=1" go test -run TestBuiltinFunctions
+func TestBuiltinFunctions(t *testing.T) {
+	testInputs := []struct {
+		input    string
+		expected interface{}
+	}{
+		{`len("")`, 0},
+		//{`len("four")`, 4},
+		//{`len("guten tag!")`, 10},
+		//{`len(1)`, "argument to `len` is not supported, got INTEGER"},
+		//{`len("one", "two")`, "wrong number of arguments. got=2, want=1"},
+	}
+
+	for _, ti := range testInputs {
+		evaluated := testEval(ti.input)
+		switch expected := ti.expected.(type) {
+		case int:
+			testIntegerObject(t, evaluated, int64(expected))
+		case string:
+			errObj, ok := evaluated.(*object.Error)
+			if !ok {
+				t.Errorf("object is not Error. got=%T (%+v)",
+					evaluated, evaluated)
+				continue
+			}
+			if errObj.Message != expected {
+				t.Errorf("wrong error message. expected=%q, got=%q",
+					expected, errObj.Message)
+			}
+		}
+	}
+}

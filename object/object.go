@@ -18,6 +18,7 @@ const (
 	ERROR_OBJ        = "ERROR"
 	FUNCTION_OBJ     = "FUNCTION"
 	STRING_OBJ       = "STRING"
+	BUILTIN_OBJ      = "BUILTIN"
 )
 
 // The Object interface represents the internal representation of a value, e.g. integer, boolean, etc.
@@ -158,3 +159,16 @@ func (s *String) Type() ObjectType { return STRING_OBJ }
 
 // Implements the Object interface
 func (s *String) Inspect() string { return s.Value }
+
+type BuiltInFunction func(args ...Object) Object
+
+// A wrapper for integer with string value
+type Builtin struct {
+	Fn BuiltInFunction
+}
+
+// Implements the Object interface
+func (b *Builtin) Type() ObjectType { return BUILTIN_OBJ }
+
+// Implements the Object interface
+func (b *Builtin) Inspect() string { return "builtin function" }

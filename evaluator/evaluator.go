@@ -15,6 +15,15 @@ var (
 	FALSE = &object.Boolean{Value: false}
 )
 
+// A map of built-in functions
+var builtins = map[string]*object.Builtin{
+	"len": &object.Builtin{
+		Fn: func(args ...object.Object) object.Object {
+			return NULL
+		},
+	},
+}
+
 // Eval evaluates an AST node to our value Object representation
 func Eval(n ast.Node, env *object.Environment) object.Object {
 	switch node := n.(type) {
@@ -237,11 +246,15 @@ func evalInfixStringExpression(op string, lhs, rhs object.Object) object.Object 
 }
 
 func evalIdentifier(node *ast.Identifier, env *object.Environment) object.Object {
-	obj, found := env.Get(node.Value)
-	if !found {
-		return newError("identifier not found: %s", node.Value)
+	if obj, found := env.Get(node.Value); found {
+		return obj
 	}
-	return obj
+
+	if builtin, found := builtins[node.Value]; found {
+		return builtin
+	}
+
+	return newError("identifier not found: %s", node.Value)
 }
 
 func isTruthy(obj object.Object) bool {
