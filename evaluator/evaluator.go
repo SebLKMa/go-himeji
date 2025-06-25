@@ -15,15 +15,6 @@ var (
 	FALSE = &object.Boolean{Value: false}
 )
 
-// A map of built-in functions
-var builtins = map[string]*object.Builtin{
-	"len": &object.Builtin{
-		Fn: func(args ...object.Object) object.Object {
-			return NULL
-		},
-	},
-}
-
 // Eval evaluates an AST node to our value Object representation
 func Eval(n ast.Node, env *object.Environment) object.Object {
 	switch node := n.(type) {
@@ -309,16 +300,18 @@ func isError(obj object.Object) bool {
 }
 
 func executeFunction(fn object.Object, args []object.Object) object.Object {
-	function, ok := fn.(*object.Function)
-	if !ok {
+	switch function := fn.(type) {
+	case *object.Function:
+		scopedEnv := scopeFunctionEnv(function, args)
+		// Recursively Eval until the last function body
+		// Unbox it so that evalBlockStatement won’t stop evaluating statements in “outer” functions
+		executed := Eval(function.Body, scopedEnv)
+		return unboxReturnValue(executed)
+	case *object.Builtin:
+		return function.Fn(args...)
+	default:
 		return newError("not a function: %s", fn.Type())
 	}
-
-	scopedEnv := scopeFunctionEnv(function, args)
-	// Recursively Eval until the last function body
-	// Unbox it so that evalBlockStatement won’t stop evaluating statements in “outer” functions
-	executed := Eval(function.Body, scopedEnv)
-	return unboxReturnValue(executed)
 }
 
 func scopeFunctionEnv(fn *object.Function, args []object.Object) *object.Environment {
