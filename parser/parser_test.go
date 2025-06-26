@@ -796,3 +796,33 @@ func TestStringLiteralExpression(t *testing.T) {
 		t.Errorf("identifier expected value is guten tag!, but got %d\n", &literal.Value)
 	}
 }
+
+// GOFLAGS="-count=1" go test -run TestArrayLiterals
+func TestArrayLiterals(t *testing.T) {
+	input := `[1, 2 * 2, 3 + 3]`
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("Program statements expected %d, but got %d\n", 1, len(program.Statements))
+	}
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("stmt expected type is ast.ExpressionStatement, but got %T\n", program.Statements[0])
+	}
+
+	myArray, ok := stmt.Expression.(*ast.ArrayLiteral)
+	if !ok {
+		t.Fatalf("statement expected type is ast.ArrayLiteral, but got %T\n", stmt.Expression)
+	}
+
+	if len(myArray.Elements) != 3 {
+		t.Fatalf("My array elements expected %d, but got %d\n", 3, len(myArray.Elements))
+	}
+
+	testInfixExpression(t, myArray.Elements[1], 2, "*", 2)
+	testInfixExpression(t, myArray.Elements[2], 3, "+", 3)
+}

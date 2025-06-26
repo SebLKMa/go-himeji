@@ -330,3 +330,30 @@ func (sl *StringLiteral) TokenLiteral() string { return sl.Token.Literal }
 
 // Implements Node
 func (sl *StringLiteral) String() string { return sl.Token.Literal }
+
+type ArrayLiteral struct {
+	Token    tk.Token // the "[" token
+	Elements []Expression
+}
+
+// Implements Expression
+func (al *ArrayLiteral) expressionNode() {}
+
+// Implements Node
+func (al *ArrayLiteral) TokenLiteral() string { return al.Token.Literal }
+
+// Implements Node
+func (al *ArrayLiteral) String() string {
+	var out bytes.Buffer
+
+	elements := []string{}
+	for _, e := range al.Elements {
+		elements = append(elements, e.String())
+	}
+
+	out.WriteString(tk.LBRACKET)
+	out.WriteString(strings.Join(elements, ", "))
+	out.WriteString(tk.RBRACKET)
+
+	return out.String()
+}

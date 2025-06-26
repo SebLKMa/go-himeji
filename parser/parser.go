@@ -71,6 +71,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(tk.IF, p.parseIfExpression)
 	p.registerPrefix(tk.FUNCTION, p.parseFunctionLiteral)
 	p.registerPrefix(tk.STRING, p.parseStringLiteral)
+	p.registerPrefix(tk.LBRACKET, p.parseArrayLiteral)
 
 	// infix functions
 	p.infixParseFns = make(map[tk.TokenType]infixParseFn)
@@ -232,6 +233,30 @@ func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 	}
 
 	return stmt
+}
+
+func (p *Parser) parseExpressionList(end tk.TokenType) []ast.Expression {
+	list := []ast.Expression{}
+
+	if p.peekTokenIs(end) { // e.g. end of array
+		p.nextToken()
+		return list
+	}
+
+	p.nextToken()
+	list = append(list, p.parseExpression(LOWEST))
+
+	for p.peekTokenIs(tk.COMMA) {
+		p.nextToken()
+		p.nextToken()
+		list = append(list, p.parseExpression(LOWEST))
+	}
+
+	if !p.moveNextIfPeekTokenIs(end) {
+		return nil
+	}
+
+	return list
 }
 
 // parseExpression parses prefixes by lookup tables - heart of the Pratt parser
@@ -436,6 +461,7 @@ func (p *Parser) parseFunctionLiteral() ast.Expression {
 	return fnl
 }
 
+// parseCallArguments has been refactored to parseCallExpression
 func (p *Parser) parseCallArguments() []ast.Expression {
 	args := []ast.Expression{}
 
@@ -462,7 +488,8 @@ func (p *Parser) parseCallArguments() []ast.Expression {
 
 func (p *Parser) parseCallExpression(callFunction ast.Expression) ast.Expression {
 	expr := &ast.CallExpression{Token: p.curToken, Function: callFunction}
-	expr.Arguments = p.parseCallArguments()
+	//expr.Arguments = p.parseCallArguments()
+	expr.Arguments = p.parseExpressionList(tk.RPAREN) // same as parseCallArguments but accepts the ending token
 	return expr
 }
 
@@ -472,4 +499,10 @@ func (p *Parser) parseStringLiteral() ast.Expression {
 
 	// Do not move to next token.
 	return lit
+}
+
+func (p *Parser) parseArrayLiteral() ast.Expression {
+	array := &ast.ArrayLiteral{Token: p.curToken}
+	array.Elements = p.parseExpressionList(tk.RBRACKET)
+	return array
 }
