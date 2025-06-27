@@ -357,3 +357,30 @@ func (al *ArrayLiteral) String() string {
 
 	return out.String()
 }
+
+type IndexExpression struct {
+	Token tk.Token   // the "[" token, for detacting array index
+	Left  Expression // the array variable name, which could also be an expression
+	Index Expression // the array index, which could also be an expression
+	// the index would semantically be resolved to be an integer
+}
+
+// Implements Expression
+func (ie *IndexExpression) expressionNode() {}
+
+// Implements Node
+func (ie *IndexExpression) TokenLiteral() string { return ie.Token.Literal }
+
+// Implements Node
+func (ie *IndexExpression) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("(")
+	out.WriteString(ie.Left.String())
+	out.WriteString(tk.LBRACKET)
+	out.WriteString(ie.Index.String())
+	out.WriteString(tk.RBRACKET)
+	out.WriteString(")")
+
+	return out.String()
+}

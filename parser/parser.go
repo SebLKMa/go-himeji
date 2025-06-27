@@ -9,7 +9,8 @@ import (
 	tk "github.com/seblkma/go-himeji/token" // naming conflicts with go/token
 )
 
-// For evaluation order - precedence, the first LOWEST has lowest precedence, the last has the highest precedence
+// For evaluation order precedence, the whole idea of PRATT parser
+// the first LOWEST has lowest precedence, the last has the highest precedence
 const (
 	_ int = iota
 	LOWEST
@@ -19,9 +20,11 @@ const (
 	PRODUCT       // *
 	PREFIX        // -X or !X
 	CALL          // callFunction(X)
+	INDEX         // array[index]
 )
 
 // Precedence table, e.g. multiplication has higher precedence than addition
+// The whole idea of PRATT parser
 var precedences = map[tk.TokenType]int{
 	tk.EQ:       EQUALS,
 	tk.NOT_EQ:   EQUALS,
@@ -32,6 +35,7 @@ var precedences = map[tk.TokenType]int{
 	tk.SLASH:    PRODUCT,
 	tk.ASTERISK: PRODUCT,
 	tk.LPAREN:   CALL,
+	tk.LBRACKET: INDEX,
 }
 
 // Function types for associating to each specific token type
@@ -84,6 +88,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(tk.LT, p.parseInfixExpression)
 	p.registerInfix(tk.GT, p.parseInfixExpression)
 	p.registerInfix(tk.LPAREN, p.parseCallExpression)
+	p.registerInfix(tk.LBRACKET, p.parseIndexExpression)
 
 	return p
 }
@@ -505,4 +510,24 @@ func (p *Parser) parseArrayLiteral() ast.Expression {
 	array := &ast.ArrayLiteral{Token: p.curToken}
 	array.Elements = p.parseExpressionList(tk.RBRACKET)
 	return array
+}
+
+// parseIndexExpression typically parses array index expression
+func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
+	defer untrace(trace("parseIndexExpression"))
+	expr := &ast.IndexExpression{
+		Token: p.curToken,
+		Left:  left,
+	}
+
+	p.nextToken()
+
+	expr.Index = p.parseExpression(LOWEST)
+
+	if !p.moveNextIfPeekTokenIs(tk.RBRACKET) {
+		return nil
+	}
+
+	// end of array detected
+	return expr
 }

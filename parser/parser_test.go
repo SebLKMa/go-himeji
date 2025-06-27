@@ -492,6 +492,15 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 		{"a + add(b * c) + d", "((a + add((b * c))) + d)"},
 		{"add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))", "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))"},
 		{"add(a + b + c * d / f + g)", "add((((a + b) + ((c * d) / f)) + g))"},
+		// array index expressions
+		{
+			"a * [1, 2, 3, 4][b * c] * d",
+			"((a * ([1, 2, 3, 4][(b * c)])) * d)",
+		},
+		{
+			"add(a * b[2], b[1], 2 * [1, 2][1])",
+			"add((a * (b[2])), (b[1]), (2 * ([1, 2][1])))",
+		},
 	}
 
 	for _, ii := range infixInputs {
@@ -825,4 +834,38 @@ func TestArrayLiterals(t *testing.T) {
 
 	testInfixExpression(t, myArray.Elements[1], 2, "*", 2)
 	testInfixExpression(t, myArray.Elements[2], 3, "+", 3)
+}
+
+// GOFLAGS="-count=1" go test -run TestIndexExpression
+func TestIndexExpression(t *testing.T) {
+	input := "myArray[1 + 1]"
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("Program statements expected %d, but got %d\n", 1, len(program.Statements))
+	}
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("stmt expected type is ast.ExpressionStatement, but got %T\n", program.Statements[0])
+	}
+
+	indexExpr, ok := stmt.Expression.(*ast.IndexExpression)
+	if !ok {
+		t.Fatalf("statement expected type is ast.IndexExpression, but got %T\n", stmt.Expression)
+	}
+
+	if !testIdentifier(t, indexExpr.Left, "myArray") {
+		return
+		//t.Fatalf("My array identifier expected %s, but got %s\n", "myArray", indexExpr.Left)
+	}
+
+	if !testInfixExpression(t, indexExpr.Index, 1, "+", 1) {
+		return
+	}
+
+	// see TestOperatorPrecedenceParsing updated to also test precedence in array index expression
 }
