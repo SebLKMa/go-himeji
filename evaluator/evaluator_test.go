@@ -420,3 +420,80 @@ func TestBuiltinFunctions(t *testing.T) {
 		}
 	}
 }
+
+// GOFLAGS="-count=1" go test -run TestArrayLiterals
+func TestArrayLiterals(t *testing.T) {
+	testInput := "[1, 2 * 2, 3 + 3]"
+
+	evaluated := testEval(testInput)
+	arr, ok := evaluated.(*object.Array)
+	if !ok {
+		t.Fatalf("object is not an Array. got=%T (%+v)", evaluated, evaluated)
+	}
+	if len(arr.Elements) != 3 {
+		t.Errorf("Array len has wrong value. got=%d", len(arr.Elements))
+	}
+
+	testIntegerObject(t, arr.Elements[0], 1)
+	testIntegerObject(t, arr.Elements[1], 4)
+	testIntegerObject(t, arr.Elements[2], 6)
+}
+
+// GOFLAGS="-count=1" go test -run TestArrayIndexExpressions
+func TestArrayIndexExpressions(t *testing.T) {
+	testInputs := []struct {
+		input    string
+		expected interface{}
+	}{
+		{
+			"[1, 2, 3][0]",
+			1,
+		},
+		{
+			"[1, 2, 3][1]",
+			2,
+		},
+		{
+			"[1, 2, 3][2]",
+			3,
+		},
+		{
+			"let i = 0; [1][i];",
+			1,
+		},
+		{
+			"[1, 2, 3][1 + 1];",
+			3,
+		},
+		{
+			"let myArray = [1, 2, 3]; myArray[2];",
+			3,
+		},
+		{
+			"let myArray = [1, 2, 3]; myArray[0] + myArray[1] + myArray[2];",
+			6,
+		},
+		{
+			"let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i]",
+			2,
+		},
+		{
+			"[1, 2, 3][3]",
+			nil,
+		},
+		{
+			"[1, 2, 3][-1]",
+			nil,
+		},
+	}
+
+	for _, ti := range testInputs {
+		evaluated := testEval(ti.input)
+		switch expected := ti.expected.(type) {
+		case int:
+			testIntegerObject(t, evaluated, int64(expected))
+		default:
+			testNullObject(t, evaluated)
+		}
+	}
+}
