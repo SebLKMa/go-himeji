@@ -139,6 +139,7 @@ func TestNextTokenV2(t *testing.T) {
 	"foobar"
 	"foo bar"
 	[1, 2];
+	{"hello": "world"}
 	`
 	fmt.Println("input:")
 	fmt.Println(input)
@@ -235,6 +236,12 @@ func TestNextTokenV2(t *testing.T) {
 		{token.INT, "2"},
 		{token.RBRACKET, "]"},
 		{token.SEMICOLON, ";"},
+
+		{token.LBRACE, "{"},
+		{token.STRING, "hello"},
+		{token.COLON, ":"},
+		{token.STRING, "world"},
+		{token.RBRACE, "}"},
 
 		{token.EOF, ""},
 	}
