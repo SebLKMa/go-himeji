@@ -3,6 +3,7 @@ package object
 import (
 	"bytes"
 	"fmt"
+	"hash/fnv"
 	"strings"
 
 	"github.com/seblkma/go-himeji/ast"
@@ -38,6 +39,11 @@ func (n *Null) Type() ObjectType { return NULL_OBJ }
 // Implements the Object interface
 func (n *Null) Inspect() string { return "null" }
 
+type HashKey struct {
+	Type  ObjectType
+	Value uint64 // always a +ve hashed value
+}
+
 // A wrapper for integer with int64 value
 type Integer struct {
 	Value int64
@@ -49,6 +55,11 @@ func (i *Integer) Type() ObjectType { return INTEGER_OBJ }
 // Implements the Object interface
 func (i *Integer) Inspect() string { return fmt.Sprintf("%d", i.Value) }
 
+// Provides HashKey function for Integer
+func (i *Integer) HashKey() HashKey {
+	return HashKey{Type: i.Type(), Value: uint64(i.Value)}
+}
+
 // A wrapper for boolean with bool value
 type Boolean struct {
 	Value bool
@@ -59,6 +70,17 @@ func (b *Boolean) Type() ObjectType { return BOOLEAN_OBJ }
 
 // Implements the Object interface
 func (b *Boolean) Inspect() string { return fmt.Sprintf("%t", b.Value) }
+
+// Provides HashKey function for Boolean
+func (b *Boolean) HashKey() HashKey {
+	var value uint64
+	if b.Value {
+		value = 1
+	} else {
+		value = 0
+	}
+	return HashKey{Type: b.Type(), Value: value}
+}
 
 // A wrapper for boolean with bool value
 type ReturnValue struct {
@@ -160,6 +182,13 @@ func (s *String) Type() ObjectType { return STRING_OBJ }
 
 // Implements the Object interface
 func (s *String) Inspect() string { return s.Value }
+
+// Provides HashKey function for String
+func (s *String) HashKey() HashKey {
+	hFn := fnv.New64a()
+	hFn.Write([]byte(s.Value))
+	return HashKey{Type: s.Type(), Value: hFn.Sum64()}
+}
 
 type BuiltInFunction func(args ...Object) Object
 
