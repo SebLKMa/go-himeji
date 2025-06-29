@@ -869,3 +869,126 @@ func TestIndexExpression(t *testing.T) {
 
 	// see TestOperatorPrecedenceParsing updated to also test precedence in array index expression
 }
+
+// GOFLAGS="-count=1" go test -run TestHashLiterals
+func TestHashLiterals(t *testing.T) {
+	input := `{"one": 1, "two": 2, "three": 3}`
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("Program statements expected %d, but got %d\n", 1, len(program.Statements))
+	}
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("stmt expected type is ast.ExpressionStatement, but got %T\n", program.Statements[0])
+	}
+
+	myHash, ok := stmt.Expression.(*ast.HashLiteral)
+	if !ok {
+		t.Fatalf("statement expected type is ast.HashLiteral, but got %T\n", stmt.Expression)
+	}
+
+	if len(myHash.Pairs) != 3 {
+		t.Fatalf("My hash pairs expected %d, but got %d\n", 3, len(myHash.Pairs))
+	}
+
+	expected := map[string]int64{
+		"one":   1,
+		"two":   2,
+		"three": 3,
+	}
+
+	for key, value := range myHash.Pairs {
+		keyLiteral, ok := key.(*ast.StringLiteral)
+		if !ok {
+			t.Errorf("key is not ast.StringLiteral. got=%T", key)
+		}
+		expectedValue := expected[keyLiteral.String()]
+		testIntegerLiteral(t, value, expectedValue)
+	}
+}
+
+// GOFLAGS="-count=1" go test -run TestEmptyHashLiteral
+func TestEmptyHashLiteral(t *testing.T) {
+	input := "{}"
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("Program statements expected %d, but got %d\n", 1, len(program.Statements))
+	}
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("stmt expected type is ast.ExpressionStatement, but got %T\n", program.Statements[0])
+	}
+
+	myHash, ok := stmt.Expression.(*ast.HashLiteral)
+	if !ok {
+		t.Fatalf("statement expected type is ast.HashLiteral, but got %T\n", stmt.Expression)
+	}
+
+	if len(myHash.Pairs) != 0 {
+		t.Fatalf("My hash pairs expected %d, but got %d\n", 0, len(myHash.Pairs))
+	}
+}
+
+// GOFLAGS="-count=1" go test -run TestHashLiteralsExpressions
+func TestHashLiteralsExpressions(t *testing.T) {
+	input := `{"one": 0 + 1, "two": 10 - 8, "three": 15 / 5}`
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("Program statements expected %d, but got %d\n", 1, len(program.Statements))
+	}
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("stmt expected type is ast.ExpressionStatement, but got %T\n", program.Statements[0])
+	}
+
+	myHash, ok := stmt.Expression.(*ast.HashLiteral)
+	if !ok {
+		t.Fatalf("statement expected type is ast.HashLiteral, but got %T\n", stmt.Expression)
+	}
+
+	if len(myHash.Pairs) != 3 {
+		t.Fatalf("My hash pairs expected %d, but got %d\n", 3, len(myHash.Pairs))
+	}
+
+	testFns := map[string]func(ast.Expression){
+		"one:": func(e ast.Expression) {
+			testInfixExpression(t, e, 0, "+", 1)
+		},
+		"two:": func(e ast.Expression) {
+			testInfixExpression(t, e, 10, "-", 8)
+		},
+		"three:": func(e ast.Expression) {
+			testInfixExpression(t, e, 15, "/", 5)
+		},
+	}
+
+	for key, value := range myHash.Pairs {
+		keyLiteral, ok := key.(*ast.StringLiteral)
+		if !ok {
+			t.Errorf("key is not ast.StringLiteral. got=%T", key)
+		}
+
+		testFn, found := testFns[keyLiteral.String()]
+		if !found {
+			t.Errorf("No test function for key %q found", keyLiteral.String())
+			continue
+		}
+
+		testFn(value)
+	}
+}

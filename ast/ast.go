@@ -384,3 +384,30 @@ func (ie *IndexExpression) String() string {
 
 	return out.String()
 }
+
+type HashLiteral struct {
+	Token tk.Token // the "{" token
+	Pairs map[Expression]Expression
+}
+
+// Implements Expression
+func (hl *HashLiteral) expressionNode() {}
+
+// Implements Node
+func (hl *HashLiteral) TokenLiteral() string { return hl.Token.Literal }
+
+// Implements Node
+func (hl *HashLiteral) String() string {
+	var out bytes.Buffer
+
+	pairs := []string{}
+	for k, v := range hl.Pairs {
+		pairs = append(pairs, k.String()+":"+v.String())
+	}
+
+	out.WriteString(tk.LBRACKET)
+	out.WriteString(strings.Join(pairs, ", "))
+	out.WriteString(tk.RBRACKET)
+
+	return out.String()
+}
