@@ -939,8 +939,8 @@ func TestEmptyHashLiteral(t *testing.T) {
 	}
 }
 
-// GOFLAGS="-count=1" go test -run TestHashLiteralsExpressions
-func TestHashLiteralsExpressions(t *testing.T) {
+// GOFLAGS="-count=1" go test -run TestParseHashLiteralsExpressions
+func TestParseHashLiteralsExpressions(t *testing.T) {
 	input := `{"one": 0 + 1, "two": 10 - 8, "three": 15 / 5}`
 
 	l := lexer.New(input)
@@ -966,13 +966,13 @@ func TestHashLiteralsExpressions(t *testing.T) {
 	}
 
 	testFns := map[string]func(ast.Expression){
-		"one:": func(e ast.Expression) {
+		"one": func(e ast.Expression) {
 			testInfixExpression(t, e, 0, "+", 1)
 		},
-		"two:": func(e ast.Expression) {
+		"two": func(e ast.Expression) {
 			testInfixExpression(t, e, 10, "-", 8)
 		},
-		"three:": func(e ast.Expression) {
+		"three": func(e ast.Expression) {
 			testInfixExpression(t, e, 15, "/", 5)
 		},
 	}

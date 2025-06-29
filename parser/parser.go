@@ -76,6 +76,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(tk.FUNCTION, p.parseFunctionLiteral)
 	p.registerPrefix(tk.STRING, p.parseStringLiteral)
 	p.registerPrefix(tk.LBRACKET, p.parseArrayLiteral)
+	p.registerPrefix(tk.LBRACE, p.parseHashLiteral)
 
 	// infix functions
 	p.infixParseFns = make(map[tk.TokenType]infixParseFn)
@@ -530,4 +531,30 @@ func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
 
 	// end of array detected
 	return expr
+}
+
+func (p *Parser) parseHashLiteral() ast.Expression {
+	defer untrace(trace("parseHashLiteral"))
+	hash := &ast.HashLiteral{Token: p.curToken}
+	hash.Pairs = make(map[ast.Expression]ast.Expression)
+
+	for !p.peekTokenIs(tk.RBRACE) {
+		p.nextToken()
+		key := p.parseExpression(LOWEST) // the first expression after "{"
+		if !p.moveNextIfPeekTokenIs(tk.COLON) {
+			return nil // return if next expected is not ":"
+		}
+		p.nextToken()
+		value := p.parseExpression(LOWEST)
+		hash.Pairs[key] = value
+		if !p.peekTokenIs(tk.RBRACE) && !p.moveNextIfPeekTokenIs(tk.COMMA) {
+			return nil // return if next is not "}," hence end of key:value pairs
+		}
+	}
+
+	if !p.moveNextIfPeekTokenIs(tk.RBRACE) {
+		return nil
+	}
+
+	return hash
 }
