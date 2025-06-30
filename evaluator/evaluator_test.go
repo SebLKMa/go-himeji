@@ -498,6 +498,48 @@ func TestArrayIndexExpressions(t *testing.T) {
 	}
 }
 
+// GOFLAGS="-count=1" go test -run TestHashLiterals
+func TestHashLiterals(t *testing.T) {
+	testInput := `
+	let two = "two";
+	{
+	"one": 10 - 9,
+	two: 1 + 1,
+	"thr" + "ee": 6 / 2,
+	4: 4,
+	true: 5,
+	false: 6
+	}
+	`
+
+	evaluated := testEval(testInput)
+	hashes, ok := evaluated.(*object.Hashes)
+	if !ok {
+		t.Fatalf("object is not a Hashes. got=%T (%+v)", evaluated, evaluated)
+	}
+
+	expected := map[object.HashKey]int64{
+		(&object.String{Value: "one"}).HashKey():   1,
+		(&object.String{Value: "two"}).HashKey():   2,
+		(&object.String{Value: "three"}).HashKey(): 3,
+		(&object.Integer{Value: 4}).HashKey():      4,
+		TRUE.HashKey():                             5,
+		FALSE.HashKey():                            6,
+	}
+
+	if len(hashes.Pairs) != len(expected) {
+		t.Fatalf("Hash has wrong num of pairs. got=%d", len(hashes.Pairs))
+	}
+
+	for expectedKey, expectedValue := range expected {
+		pair, found := hashes.Pairs[expectedKey]
+		if !found {
+			t.Errorf("no pair for given key in Pairs")
+		}
+		testIntegerObject(t, pair.Value, expectedValue)
+	}
+}
+
 // TODO: test in REPL
 /*
 let map = fn(arr, f) {

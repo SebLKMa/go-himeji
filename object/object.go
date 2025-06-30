@@ -21,6 +21,7 @@ const (
 	STRING_OBJ       = "STRING"
 	BUILTIN_OBJ      = "BUILTIN"
 	ARRAY_OBJ        = "ARRAY"
+	HASH_OBJ         = "HASH"
 )
 
 // The Object interface represents the internal representation of a value, e.g. integer, boolean, etc.
@@ -44,6 +45,10 @@ type HashKey struct {
 	Value uint64 // always a +ve hashed value
 }
 
+type Hashable interface {
+	HashKey() HashKey
+}
+
 // A wrapper for integer with int64 value
 type Integer struct {
 	Value int64
@@ -55,7 +60,7 @@ func (i *Integer) Type() ObjectType { return INTEGER_OBJ }
 // Implements the Object interface
 func (i *Integer) Inspect() string { return fmt.Sprintf("%d", i.Value) }
 
-// Provides HashKey function for Integer
+// Implements Hashable
 func (i *Integer) HashKey() HashKey {
 	return HashKey{Type: i.Type(), Value: uint64(i.Value)}
 }
@@ -71,7 +76,7 @@ func (b *Boolean) Type() ObjectType { return BOOLEAN_OBJ }
 // Implements the Object interface
 func (b *Boolean) Inspect() string { return fmt.Sprintf("%t", b.Value) }
 
-// Provides HashKey function for Boolean
+// Implements Hashable
 func (b *Boolean) HashKey() HashKey {
 	var value uint64
 	if b.Value {
@@ -183,7 +188,7 @@ func (s *String) Type() ObjectType { return STRING_OBJ }
 // Implements the Object interface
 func (s *String) Inspect() string { return s.Value }
 
-// Provides HashKey function for String
+// Implements Hashable
 func (s *String) HashKey() HashKey {
 	hFn := fnv.New64a()
 	hFn.Write([]byte(s.Value))
@@ -222,6 +227,35 @@ func (a *Array) Inspect() string {
 
 	out.WriteString("[")
 	out.WriteString(strings.Join(elements, ", "))
+	out.WriteString("]")
+
+	return out.String()
+}
+
+type HashPair struct {
+	Key   Object
+	Value Object
+}
+
+type Hashes struct {
+	Pairs map[HashKey]HashPair
+}
+
+// Implements the Object interface
+func (h *Hashes) Type() ObjectType { return HASH_OBJ }
+
+// Implements the Object interface
+func (h *Hashes) Inspect() string {
+	var out bytes.Buffer
+
+	// We want to output the key value pair object associated to the key
+	pairs := []string{}
+	for _, pair := range h.Pairs {
+		pairs = append(pairs, fmt.Sprintf("%s: %s", pair.Key.Inspect(), pair.Value.Inspect()))
+	}
+
+	out.WriteString("[")
+	out.WriteString(strings.Join(pairs, ", "))
 	out.WriteString("]")
 
 	return out.String()

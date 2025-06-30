@@ -97,6 +97,8 @@ func Eval(n ast.Node, env *object.Environment) object.Object {
 			return index
 		}
 		return evalIndexExpression(left, index)
+	case *ast.HashLiteral:
+		return evalHashLiteral(node, env)
 	}
 
 	return nil
@@ -323,6 +325,32 @@ func evalIndexExpression(left, index object.Object) object.Object {
 	default:
 		return newError("index operator not supported: %s", left.Type())
 	}
+}
+
+func evalHashLiteral(node *ast.HashLiteral, env *object.Environment) object.Object {
+	pairs := make(map[object.HashKey]object.HashPair)
+
+	for nodeKey, nodeValue := range node.Pairs {
+		key := Eval(nodeKey, env)
+		if isError(key) {
+			return key
+		}
+
+		hashKey, ok := key.(object.Hashable)
+		if !ok {
+			return newError("unusable as hash key: %s", key.Type())
+		}
+
+		value := Eval(nodeValue, env)
+		if isError(value) {
+			return value
+		}
+
+		hashed := hashKey.HashKey()
+		pairs[hashed] = object.HashPair{Key: key, Value: value}
+	}
+
+	return &object.Hashes{Pairs: pairs}
 }
 
 func newError(format string, a ...interface{}) *object.Error {
