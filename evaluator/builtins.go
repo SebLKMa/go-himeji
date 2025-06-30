@@ -1,6 +1,8 @@
 package evaluator
 
 import (
+	"fmt"
+
 	"github.com/seblkma/go-himeji/object"
 )
 
@@ -96,6 +98,15 @@ var builtins = map[string]*object.Builtin{
 			default:
 				return newError("argument to `push` must be ARRAY, got %s", args[0].Type())
 			}
+		},
+	},
+	"print": &object.Builtin{
+		// This function prints the arguments to STDOUT
+		Fn: func(args ...object.Object) object.Object {
+			for _, arg := range args {
+				fmt.Println(arg.Inspect())
+			}
+			return NULL
 		},
 	},
 }
