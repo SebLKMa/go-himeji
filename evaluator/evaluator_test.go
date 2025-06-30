@@ -266,6 +266,10 @@ func TestErrorHandling(t *testing.T) {
 			`"guten" - "tag!"`,
 			"unknown operator: STRING - STRING",
 		},
+		{
+			`{"name": "Monkey"}[fn(x) { x }];`,
+			"unusable as hash key: FUNCTION",
+		},
 	}
 
 	for i, ti := range testInputs {
@@ -537,6 +541,53 @@ func TestHashLiterals(t *testing.T) {
 			t.Errorf("no pair for given key in Pairs")
 		}
 		testIntegerObject(t, pair.Value, expectedValue)
+	}
+}
+
+// GOFLAGS="-count=1" go test -run TestHashIndexExpressions
+func TestHashIndexExpressions(t *testing.T) {
+	testInputs := []struct {
+		input    string
+		expected interface{}
+	}{
+		{
+			`{"foo": 5}["foo"]`,
+			5,
+		},
+		{
+			`{"foo": 5}["bar"]`,
+			nil,
+		},
+		{
+			`let key = "foo"; {"foo": 5}[key]`,
+			5,
+		},
+		{
+			`{}["foo"]`,
+			nil,
+		},
+		{
+			`{5: 5}[5]`,
+			5,
+		},
+		{
+			`{true: 5}[true]`,
+			5,
+		},
+		{
+			`{false: 6}[false]`,
+			6,
+		},
+	}
+
+	for _, ti := range testInputs {
+		evaluated := testEval(ti.input)
+		switch expected := ti.expected.(type) {
+		case int:
+			testIntegerObject(t, evaluated, int64(expected))
+		default:
+			testNullObject(t, evaluated)
+		}
 	}
 }
 
