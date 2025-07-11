@@ -23,8 +23,8 @@ func parse(input string) *ast.Program {
 	return p.ParseProgram()
 }
 
-// GOFLAGS="-count=1" go test -run TestIntegerArithmeticI
-func TestIntegerArithmeticI(t *testing.T) {
+// GOFLAGS="-count=1" go test -run TestIntegerArithmetic
+func TestIntegerArithmetic(t *testing.T) {
 	tests := []compilerTestCase{
 		{
 			input:             "1 + 2",
