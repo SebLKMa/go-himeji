@@ -25,7 +25,58 @@ func New() *Compiler {
 }
 
 func (c *Compiler) Compile(node ast.Node) error {
+	// Walk the AST recursively, evaluate them to *object types then to opcodes types
+	switch n := node.(type) {
+	case *ast.Program:
+		for _, s := range n.Statements {
+			err := c.Compile(s)
+			if err != nil {
+				return err
+			}
+		}
+
+	case *ast.ExpressionStatement:
+		err := c.Compile(n.Expression)
+		if err != nil {
+			return err
+		}
+
+	case *ast.InfixExpression:
+		err := c.Compile(n.Left)
+		if err != nil {
+			return err
+		}
+
+		err = c.Compile(n.Right)
+		if err != nil {
+			return err
+		}
+
+	case *ast.IntegerLiteral:
+		intObj := &object.Integer{Value: n.Value}
+		c.emit(opcodes.OpConstant, c.addConstant(intObj))
+	}
+
 	return nil
+}
+
+func (c *Compiler) addConstant(obj object.Object) int {
+	c.constants = append(c.constants, obj)
+	return len(c.constants) - 1
+}
+
+func (c *Compiler) addInstruction(ins []byte) int {
+	posNewInstruction := len(c.instructions)
+	c.instructions = append(c.instructions, ins...)
+	return posNewInstruction
+}
+
+// emit generates the instruction and outputs it to memory.
+// Returns the position of the emitted instruction.
+func (c *Compiler) emit(op opcodes.Opcode, operands ...int) int {
+	ins := opcodes.Make(op, operands...)
+	pos := c.addInstruction(ins)
+	return pos
 }
 
 func (c *Compiler) ByteCode() *ByteCode {
