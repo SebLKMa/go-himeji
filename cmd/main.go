@@ -5,7 +5,7 @@ import (
 	"os"
 	"os/user"
 
-	"github.com/seblkma/go-himeji/repl"
+	repl "github.com/seblkma/go-himeji/replinterpreter"
 )
 
 const PROGLANG = "Himeji"

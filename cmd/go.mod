@@ -6,13 +6,13 @@ replace (
 	github.com/seblkma/go-himeji/lexer => ../lexer
 	github.com/seblkma/go-himeji/object => ../object
 	github.com/seblkma/go-himeji/parser => ../parser
-	github.com/seblkma/go-himeji/repl => ../repl
+	github.com/seblkma/go-himeji/replinterpreter => ../replinterpreter
 	github.com/seblkma/go-himeji/token => ../token
 )
 
 go 1.22.5
 
-require github.com/seblkma/go-himeji/repl v0.0.0-00010101000000-000000000000
+require github.com/seblkma/go-himeji/replinterpreter v0.0.0-00010101000000-000000000000
 
 require (
 	github.com/seblkma/go-himeji/ast v0.0.0-00010101000000-000000000000 // indirect
