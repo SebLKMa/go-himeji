@@ -23,22 +23,6 @@ func parse(input string) *ast.Program {
 	return p.ParseProgram()
 }
 
-// GOFLAGS="-count=1" go test -run TestIntegerArithmetic
-func TestIntegerArithmetic(t *testing.T) {
-	tests := []compilerTestCase{
-		{
-			input:             "1 + 2",
-			expectedConstants: []interface{}{1, 2},
-			expectedInstructions: []opcodes.Instructions{
-				opcodes.Make(opcodes.OpConstant, 0),
-				opcodes.Make(opcodes.OpConstant, 1),
-			},
-		},
-	}
-
-	runCompilerTests(t, tests)
-}
-
 func concatInstructions(in []opcodes.Instructions) opcodes.Instructions {
 	out := opcodes.Instructions{}
 	for _, ins := range in {
@@ -117,4 +101,21 @@ func runCompilerTests(t *testing.T, tests []compilerTestCase) {
 			t.Fatalf("testConstants failed: %s", err)
 		}
 	}
+}
+
+// GOFLAGS="-count=1" go test -run TestIntegerArithmetic
+func TestIntegerArithmetic(t *testing.T) {
+	tests := []compilerTestCase{
+		{
+			input:             "1 + 2",
+			expectedConstants: []interface{}{1, 2},
+			expectedInstructions: []opcodes.Instructions{
+				opcodes.Make(opcodes.OpConstant, 0),
+				opcodes.Make(opcodes.OpConstant, 1),
+				opcodes.Make(opcodes.OpAdd),
+			},
+		},
+	}
+
+	runCompilerTests(t, tests)
 }

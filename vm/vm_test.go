@@ -75,7 +75,7 @@ func TestIntegerArithmetic(t *testing.T) {
 	tests := []vmTestCase{
 		{"1", 1},
 		{"2", 2},
-		{"1 + 2", 2}, // TODO: expected 3, but for now only has 2 at top of the stack
+		{"1 + 2", 3}, // TODO: expected 3, but for now only has 2 at top of the stack
 	}
 
 	runVmTests(t, tests)

@@ -35,6 +35,8 @@ func (ins Instructions) fmtInstruction(def *Definition, operands []int) string {
 	}
 
 	switch operandCount {
+	case 0:
+		return def.Name
 	case 1:
 		return fmt.Sprintf("%s %d", def.Name, operands[0])
 	}
@@ -46,6 +48,7 @@ type Opcode byte
 
 const (
 	OpConstant Opcode = iota
+	OpAdd
 )
 
 type Definition struct {
@@ -55,6 +58,7 @@ type Definition struct {
 
 var definitions = map[Opcode]*Definition{
 	OpConstant: {Name: "OpConstant", OperandWidths: []int{2}},
+	OpAdd:      {Name: "OpAdd", OperandWidths: []int{}}, // empty slice, no operand
 }
 
 func Lookup(op byte) (*Definition, error) {

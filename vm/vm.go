@@ -29,6 +29,12 @@ func (vm *VM) push(o object.Object) error {
 	return nil
 }
 
+func (vm *VM) pop() object.Object {
+	o := vm.stack[vm.stackptr-1]
+	vm.stackptr--
+	return o
+}
+
 func New(bytecode *compiler.ByteCode) *VM {
 	return &VM{
 		instructions: bytecode.Instructions,
@@ -52,6 +58,8 @@ func (vm *VM) Run() error {
 		// Decoded each instruction as opcode. Not using opcodes.Lookup for performance reasons.
 		op := opcodes.Opcode(vm.instructions[insptr])
 
+		// Pay special attention to details when popping objects off the stack.
+		// The popping order must be correct.
 		switch op {
 		case opcodes.OpConstant:
 			// Decode the operands, the byte right after the opcode at insptr+1.
@@ -64,6 +72,15 @@ func (vm *VM) Run() error {
 			if err != nil {
 				return err
 			}
+		case opcodes.OpAdd:
+			right := vm.pop()
+			left := vm.pop()
+			leftValue := left.(*object.Integer).Value
+			rightValue := right.(*object.Integer).Value
+
+			result := leftValue + rightValue
+			vm.push(&object.Integer{Value: result})
+
 		}
 	}
 

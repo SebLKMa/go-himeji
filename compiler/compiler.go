@@ -1,6 +1,8 @@
 package compiler
 
 import (
+	"fmt"
+
 	"github.com/seblkma/go-himeji/ast"
 	"github.com/seblkma/go-himeji/object"
 	"github.com/seblkma/go-himeji/opcodes"
@@ -50,6 +52,13 @@ func (c *Compiler) Compile(node ast.Node) error {
 		err = c.Compile(n.Right)
 		if err != nil {
 			return err
+		}
+
+		switch n.Operator {
+		case "+":
+			c.emit(opcodes.OpAdd)
+		default:
+			return fmt.Errorf("unknown operator %s", n.Operator)
 		}
 
 	case *ast.IntegerLiteral:
