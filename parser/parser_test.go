@@ -164,6 +164,7 @@ func TestLetStatements(t *testing.T) {
 
 	checkParserErrors(t, p)
 
+	// Only tests the variable name, not the assignment.
 	expectedIdentifiers := []struct {
 		expectedIdentifier string
 	}{
@@ -227,6 +228,7 @@ func TestLetStatementsComplete(t *testing.T) {
 		{"let foobar = y;", "foobar", "y"},
 	}
 
+	// Tests both the variable name and the assignment.
 	for _, let := range lets {
 		l := lexer.New(let.input)
 		p := New(l)
