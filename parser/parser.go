@@ -192,10 +192,12 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 		return nil
 	}
 
-	// TODO done: Ignoring expressions after the ASSIGN token, skip to semicolon for now
-	//for !p.curTokenIs(tk.SEMICOLON) {
-	//	p.nextToken()
-	//}
+	// Fixed: Not ignoring expressions after the ASSIGN token, not skipping to semicolon.
+	/*
+		for !p.curTokenIs(tk.SEMICOLON) {
+			p.nextToken()
+		}
+	*/
 
 	p.nextToken()
 
@@ -213,10 +215,12 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 
 	p.nextToken() // move to next token after the "return" statement
 
-	// TODO done: Ignoring expressions after the ASSIGN token, skip to semicolon for now
-	//for !p.curTokenIs(tk.SEMICOLON) {
-	//	p.nextToken()
-	//}
+	// Fixed: Not ignoring expressions after the ASSIGN token, not skipping to semicolon.
+	/*
+		for !p.curTokenIs(tk.SEMICOLON) {
+			p.nextToken()
+		}
+	*/
 
 	stmt.Value = p.parseExpression(LOWEST)
 
