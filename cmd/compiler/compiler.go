@@ -61,7 +61,7 @@ func main() {
 	src_file := getArg(1, os.Args)
 	if src_file == "" {
 		fmt.Println("Please profile source file. Example:")
-		fmt.Println("./compiler ../himeji/codes.txt")
+		fmt.Printf("%s ../himeji/codes.txt\n", os.Args[0])
 		os.Exit(1)
 	}
 
