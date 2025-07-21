@@ -2,6 +2,7 @@ module github.com/seblkma/go-himeji/cmd/runtime
 
 replace (
 	github.com/seblkma/go-himeji/ast => ../../ast
+	github.com/seblkma/go-himeji/cmd/common => ../common
 	github.com/seblkma/go-himeji/compiler => ../../compiler
 	github.com/seblkma/go-himeji/evaluator => ../../evaluator
 	github.com/seblkma/go-himeji/lexer => ../../lexer
@@ -15,6 +16,7 @@ replace (
 go 1.22.5
 
 require (
+	github.com/seblkma/go-himeji/cmd/common v0.0.0-00010101000000-000000000000
 	github.com/seblkma/go-himeji/compiler v0.0.0-00010101000000-000000000000
 	github.com/seblkma/go-himeji/object v0.0.0-00010101000000-000000000000
 	github.com/seblkma/go-himeji/vm v0.0.0-00010101000000-000000000000

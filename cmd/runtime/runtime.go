@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/seblkma/go-himeji/cmd/common"
 	"github.com/seblkma/go-himeji/compiler"
 	"github.com/seblkma/go-himeji/object"
 	"github.com/seblkma/go-himeji/vm"
@@ -20,15 +21,21 @@ func init() {
 	gob.Register(&object.Integer{})
 }
 
-const HIMEJI_CODES_BIN = "../himeji/codes.bin"
-
 func main() {
-	serializedData, err := os.ReadFile(HIMEJI_CODES_BIN)
+	// Get the first command line arg (zero index)
+	inputFile := common.GetCmdArg(1, os.Args)
+	if inputFile == "" {
+		fmt.Println("Please provide input file. Example:")
+		fmt.Printf("%s codes.bin\n", os.Args[0])
+		os.Exit(1)
+	}
+
+	serializedData, err := os.ReadFile(inputFile)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	fmt.Printf("Read %d bytes from %s\n", len(serializedData), HIMEJI_CODES_BIN)
+	fmt.Printf("Read %d bytes from %s\n", len(serializedData), inputFile)
 
 	// Check raw values
 	//v := reflect.ValueOf(serializedData)

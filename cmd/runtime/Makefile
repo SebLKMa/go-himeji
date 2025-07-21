@@ -1,4 +1,4 @@
-bin=compiler
+bin=runtime
 outdir=../himeji
 
 build:

@@ -5,7 +5,10 @@ import (
 	"encoding/gob"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 
+	"github.com/seblkma/go-himeji/cmd/common"
 	"github.com/seblkma/go-himeji/compiler"
 	"github.com/seblkma/go-himeji/lexer"
 	"github.com/seblkma/go-himeji/object"
@@ -21,56 +24,48 @@ func init() {
 	gob.Register(&object.Integer{})
 }
 
-const HIMEJI_CODES_BIN = "../himeji/codes.bin"
-
 func printParserErrors(errors []string) {
 	for _, msg := range errors {
 		fmt.Printf("\t" + msg + "\n")
 	}
 }
 
-func getArg(index int, userArgs []string) string {
+func outputFile(filePath string, newExtension string) string {
+	// Get the directory
+	dir := filepath.Dir(filePath)
 
-	// Access arguments excluding the program name
-	if len(os.Args[1:]) < 1 {
-		fmt.Println("Missing command line args")
-		return ""
-	}
+	// Get the base name without the extension
+	baseName := strings.TrimSuffix(filepath.Base(filePath), filepath.Ext(filePath))
 
-	//userArgs := os.Args[1:]
-	//fmt.Println("User-provided arguments:", userArgs)
+	// Construct the new file path
+	newFilePath := filepath.Join(dir, baseName+newExtension)
 
-	// Access individual arguments by index
-	//if len(os.Args) > 1 {
-	//	fmt.Println("First user argument:", os.Args[1])
-	//}
+	//fmt.Printf("Original path: %s\n", filePath)
+	//fmt.Printf("New path: %s\n", newFilePath)
 
-	// Iterate through user-provided arguments
-	fmt.Println("Iterating through user arguments:")
-	for i, arg := range userArgs {
-		//fmt.Printf("Argument %d: %s\n", i+1, arg)
-		if i == index {
-			return arg
-		}
-	}
-	return ""
+	//noExtPath := "/path/to/my/document"
+	//newExtPath := filepath.Join(filepath.Dir(noExtPath), strings.TrimSuffix(filepath.Base(noExtPath), filepath.Ext(noExtPath))+newExtension)
+	//fmt.Printf("Original path (no ext): %s\n", noExtPath)
+	//fmt.Printf("New path (no ext): %s\n", newExtPath)
+	return newFilePath
 }
 
 func main() {
 	// Get the first command line arg (zero index)
-	src_file := getArg(1, os.Args)
-	if src_file == "" {
-		fmt.Println("Please profile source file. Example:")
-		fmt.Printf("%s ../himeji/codes.txt\n", os.Args[0])
+	inputFile := common.GetCmdArg(1, os.Args)
+	if inputFile == "" {
+		fmt.Println("Please provide source file. Example:")
+		fmt.Printf("%s codes.txt\n", os.Args[0])
 		os.Exit(1)
 	}
 
-	src, err := os.ReadFile(src_file)
+	src, err := os.ReadFile(inputFile)
 	if err != nil {
-		fmt.Printf("Error reading file: %s\n%v\n", src_file, err)
+		fmt.Printf("Error reading file: %s\n%v\n", inputFile, err)
 		os.Exit(1)
 	}
 
+	outFile := outputFile(inputFile, ".bin")
 	line := string(src)
 	fmt.Printf("Source codes:\n%s\n", line)
 
@@ -90,7 +85,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	file, err := os.Create(HIMEJI_CODES_BIN)
+	file, err := os.Create(outFile)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
