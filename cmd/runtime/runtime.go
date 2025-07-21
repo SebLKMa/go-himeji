@@ -28,7 +28,7 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	fmt.Printf("Read %d bytes from binary_data.bin\n", len(serializedData))
+	fmt.Printf("Read %d bytes from %s\n", len(serializedData), HIMEJI_CODES_BIN)
 
 	// Check raw values
 	//v := reflect.ValueOf(serializedData)
