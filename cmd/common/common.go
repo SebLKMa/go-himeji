@@ -23,7 +23,7 @@ func GetCmdArg(index int, userArgs []string) string {
 	//}
 
 	// Iterate through user-provided arguments
-	fmt.Println("Iterating through user arguments:")
+	//fmt.Println("Iterating through user arguments:")
 	for i, arg := range userArgs {
 		//fmt.Printf("Argument %d: %s\n", i+1, arg)
 		if i == index {

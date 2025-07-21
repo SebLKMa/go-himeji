@@ -106,7 +106,7 @@ func main() {
 	if err != nil {
 		fmt.Println("file write failed:", err)
 	}
-	fmt.Printf("%d bytes wriiten.\n", n)
+	fmt.Printf("%d bytes written to %s\n", n, outFile)
 
 	// Deserialize
 	/*

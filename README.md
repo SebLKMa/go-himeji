@@ -9,6 +9,7 @@ Build the compiler:
 cd cmd/compiler
 make build
 ```
+
 Compile a source file to a bytecodes file:  
 ```sh
 cd cmd/himeji
@@ -21,7 +22,7 @@ i:0, width:2, offset:1
 instruction: [0 0 1]
 instruction: [1]
 instruction: [1]
-175 bytes wriiten.
+175 bytes written to codes.bin
 ```
 
 ## Runtime
@@ -30,12 +31,12 @@ Build the runtime virtual machine:
 cd cmd/runtime
 make build
 ```
+
 Run the bytecodes file:  
 ```sh
 cd cmd/himeji
 
 ./runtime codes.bin
-Iterating through user arguments:
 Read 175 bytes from codes.bin
 Deserialized bytecode: &{Instructions:0000 OpConstant 0
 0003 OpConstant 1
