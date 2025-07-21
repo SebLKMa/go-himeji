@@ -3,6 +3,47 @@ My interpreter and my compiler for my programming language ***himeji***.
 
 ![himeji](./images/himeji.jpg) 
 
+## Compiler
+Build the compiler:  
+```sh
+cd cmd/compiler
+make build
+```
+Compile a source file to a bytecodes file:  
+```sh
+cd cmd/himeji
+
+./compiler codes.txt
+Source codes:
+21 + 21
+
+i:0, width:2, offset:1
+instruction: [0 0 1]
+instruction: [1]
+instruction: [1]
+175 bytes wriiten.
+```
+
+## Runtime
+Build the runtime virtual machine:  
+```sh
+cd cmd/runtime
+make build
+```
+Run the bytecodes file:  
+```sh
+cd cmd/himeji
+
+./runtime codes.bin
+Iterating through user arguments:
+Read 175 bytes from codes.bin
+Deserialized bytecode: &{Instructions:0000 OpConstant 0
+0003 OpConstant 1
+0006 OpAdd
+ Constants:[0x400000e2c0 0x400000e2c8]}
+Result: 42
+```
+
 ## References
 
 Inspired by the books:  
