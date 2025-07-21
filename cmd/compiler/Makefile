@@ -1,7 +1,7 @@
 bin=compiler
 outdir=./
 
-compiler:
+build:
 	@echo "building: " ${bin}
 	mkdir -p ${outdir}
 	go build \
